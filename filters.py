@@ -1,12 +1,12 @@
 from matplotlib import pyplot as plt
 import numpy as np
-import core_functions
+import core_functions as cf
 from collections import defaultdict
 import os
 from debugger import CustomDebugger
 
 debugger = CustomDebugger()
-core_functions.debugger = debugger
+cf.debugger = debugger
 
 
 def traverse_and_match(main_root,
@@ -31,7 +31,7 @@ def traverse_and_match(main_root,
         if files:
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                    prefix = core_functions.split_and_trim(current_location, main_root)
+                    prefix = cf.split_and_trim(current_location, main_root)
 
                     img_codename = img.split(' ')[0].split('_')
                     color = matching_map[img_codename[-1]]
@@ -55,7 +55,7 @@ def traverse_and_match(main_root,
     for name_pattern, color_set in matched_images.iteritems():
         channels = []
         for color in color_set:
-            channels.append(core_functions.tiff_stack_2_np_arr(color))
+            channels.append(cf.tiff_stack_2_np_arr(color))
 
         yield name_pattern, channels
 
@@ -84,6 +84,7 @@ def name_channels(stack_group_generator, channel_names):
 
     for name_pattern, channels in stack_group_generator:
         group_dict = {'name pattern': name_pattern}
+        group_dict['channel list'] = channel_names
         for chan_name, chan in zip(channel_names, channels):
             group_dict[chan_name] = chan
 
