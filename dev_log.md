@@ -56,3 +56,8 @@ get the function debug output as it goes.
 
 Unless we are using `yield` statements, in which case the pipeline would be performing
 processing ticks.
+
+Idea - separate the namespaces that are logical in the context of the analysis
+
+In order to avoid the generator once-consumed property, use multiple pass-through 
+objects in dicts. That will also make it for an easy debugging in the end

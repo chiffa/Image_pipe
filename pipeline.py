@@ -14,16 +14,32 @@ translator = {'w1488': 0,
 source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis",
                                matching_map=translator)
 
+# that architecture actually removes the need for the debug line
+
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
-GFP = cf.extract(named_source, 'GFP')
-stabilized_GFP = cf.gamma_stabilize(GFP)
-smoothed_GFP = cf.smooth(stabilized_GFP)
-# should I even be considering wrapping the functions to make iterators out of them?
-#  idea - since it's impossible to split the generators but we are interested only in stacks,
-#  either build the pipeline within a round (filters always on all channels)
-#  or iteratively modify the named_source
+stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP')
+smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP')
+projected_GFP = cf.sum_projection(smoothed_GFP,
+                                  in_channel='GFP',
+                                  out_channel='projected_GFP')
+segmented_GFP = cf.segment_out_cells(projected_GFP,
+                                     in_channel='projected_GFP',
+                                     out_channel='cell_labels')
+qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
+                                   in_channel='projected_GFP',
+                                   out_channel='qualifying_GFP')
+average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
+                                   in_channel=['cell_labels', 'projected_GFP', 'qualifying_GFP'],
+                                   out_channel='average_GFP', )
+GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
+                                                   in_channel='average_GFP',
+                                                   out_channel='upper_outliers',
+                                                   log_channel='outlier_log')
+non_GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
+                                 in_channel=['cell_labels', 'upper_outliers'],
+                                 out_channel='non_GFP_outliers')
 
 
-for payload in smoothed_GFP:
-    plt.imshow(payload[6, :, :])
+for payload in non_GFP_outliers:
+    plt.imshow(payload['cell_labels'])
     plt.show()
