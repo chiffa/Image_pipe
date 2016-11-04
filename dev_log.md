@@ -61,3 +61,13 @@ Idea - separate the namespaces that are logical in the context of the analysis
 
 In order to avoid the generator once-consumed property, use multiple pass-through 
 objects in dicts. That will also make it for an easy debugging in the end
+
+## Formalism:
+Can we replace the in_channel, out_channel, log_channel with actual bindings to the variables?
+Right now, we are using an explicit dict for scope passing - could we rather use the function names?
+
+What I am trying is basically to make flow control explicit by using an assembly-line 
+model. The sort-coming is that I am using words, so I am using a lot Python interpreter errors
+and IDEs power.
+
+A way around it is to hack the pipeline in the same manner as the guy who wrote hy (py-lisp)

@@ -19,27 +19,41 @@ source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yea
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
 stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP')
 smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP')
+
 projected_GFP = cf.sum_projection(smoothed_GFP,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
+
 segmented_GFP = cf.segment_out_cells(projected_GFP,
                                      in_channel='projected_GFP',
                                      out_channel='cell_labels')
+
 qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
                                    in_channel='projected_GFP',
                                    out_channel='qualifying_GFP')
+
 average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
                                    in_channel=['cell_labels', 'projected_GFP', 'qualifying_GFP'],
-                                   out_channel='average_GFP', )
+                                   out_channel='average_GFP')
+
 GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
                                                    in_channel='average_GFP',
                                                    out_channel='upper_outliers',
                                                    log_channel='outlier_log')
-non_GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
+
+GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
                                  in_channel=['cell_labels', 'upper_outliers'],
-                                 out_channel='non_GFP_outliers')
+                                 out_channel='GFP_outliers')
+
+no_outliers = cf.clear_based_on_2d_mask(GFP_outliers,
+                                        in_channel=['GFP', 'GFP_outliers'],
+                                        out_channel='GFP')
+
+no_outliers = cf.clear_based_on_2d_mask(no_outliers,
+                                        in_channel=['mCherry', 'GFP_outliers'],
+                                        out_channel='mCherry')
 
 
-for payload in non_GFP_outliers:
-    plt.imshow(payload['cell_labels'])
+for payload in no_outliers:
+    plt.imshow(payload['GFP'][6,:,:])
     plt.show()

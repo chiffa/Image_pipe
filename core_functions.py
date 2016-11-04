@@ -110,6 +110,8 @@ def generator_wrapper(f, expected_dims=(3,)):
                 in_chan = [in_chan]
 
             if len(in_chan) != len(expected_dims):
+                print in_chan, expected_dims
+                print len(in_chan), len(expected_dims)
                 raise PipeArgError('More channels are piped than function allows')
 
             if not out_chan:
@@ -161,6 +163,18 @@ def split_and_trim(prefix, main_root):
         trim_length += 1
 
     return prefix[trim_length:].split(os.sep)
+
+
+def _3d_stack_2d_filter(_3d_stack, _2d_filter):
+    new_stack = np.zeros_like(_3d_stack)
+    new_stack[:, _2d_filter] = _3d_stack[:, _2d_filter]
+    return new_stack
+
+
+def _2d_stack_2d_filter(_2d_stack, _2d_filter):
+    new_stack = np.zeros_like(_2d_stack)
+    new_stack[_2d_filter] = _2d_stack[_2d_filter]
+    return new_stack
 
 
 @generator_wrapper
@@ -266,7 +280,7 @@ def detect_upper_outliers(cells_average_gfp_list, log_to=None):
     std_err *= 8
     predicted_average_gfp = intercept + slope * np.array(cell_no)
 
-    non_dying_cells = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) <
+    upper_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) <
                                                  np.array(cells_average_gfp_list)]]
 
     # TODO: redirect the injection to a logging value in the pipe
@@ -278,15 +292,22 @@ def detect_upper_outliers(cells_average_gfp_list, log_to=None):
     if log_to:
         log_to[0][log_to[1]] = embedded_dict
 
-    return non_dying_cells
+    return upper_outliers
 
 
-@generator_wrapper(expected_dims=(2,1))
+@generator_wrapper(expected_dims=(2, 1))
 def paint_mask(label_masks, labels_to_paint):
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
-    if labels_to_paint.tolist() != []:
+    if labels_to_paint.tolist() != np.array([]):
         for idx in labels_to_paint.tolist():
             mask_to_paint[label_masks == idx + 1] = 1  # indexing starts from 1, not 0 for the labels
 
     return mask_to_paint
+
+
+@generator_wrapper(expected_dims=(3, 2))
+def clear_based_on_2d_mask(stack, mask):
+    return _3d_stack_2d_filter(stack, np.logical_not(mask))
+
+
