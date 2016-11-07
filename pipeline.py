@@ -53,7 +53,16 @@ no_outliers = cf.clear_based_on_2d_mask(no_outliers,
                                         in_channel=['mCherry', 'GFP_outliers'],
                                         out_channel='mCherry')
 
+per_cell_split = cf.splitter(no_outliers, 'per_cell',
+                             sources=['GFP', 'mCherry'],
+                             mask='cell_labels')
 
-for payload in no_outliers:
-    plt.imshow(payload['GFP'][6,:,:])
+
+
+
+for payload in per_cell_split:
+    for key, value in payload['per_cell'].iteritems():
+        print key,
+        print value.keys()
+    plt.imshow(payload['GFP'][6, :, :])
     plt.show()

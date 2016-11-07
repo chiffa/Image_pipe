@@ -15,7 +15,7 @@ from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from skimage.morphology import disk
 from skimage.morphology import skeletonize, medial_axis
-from skimage.filters import threshold_otsu
+from skimage.filters import threshold_otsu, rank
 from scipy.stats import t
 from scipy.stats import ttest_ind
 from itertools import combinations
@@ -74,6 +74,12 @@ def list_not_string(argument):
         raise PipeArgError("Expected a name of channel or list of names. Found: '%s' " % argument)
 
 
+# TODO: convert to multiple input/output as well
+# allow to override the expected dims check
+# allow to perform expected output dims check => Problem, the mapping rules are not very clear.
+# map in to out if only one output is passed to the function and function signature is n = n
+# remove the logging channel as well
+
 @doublewrap
 def generator_wrapper(f, expected_dims=(3,)):
 
@@ -123,6 +129,7 @@ def generator_wrapper(f, expected_dims=(3,)):
                     if len(named_dict[chan].shape) != expected_dims[i]:
                         raise PipeArgError('Mismatched channel dimension for channel. %s is of dim %s, expected %s' %
                                            chan, len(chan.shape), expected_dims[i])
+
                     args_puck.append(named_dict[chan])
                 local_args = tuple(args_puck) + args
                 if log_chan:
@@ -136,6 +143,58 @@ def generator_wrapper(f, expected_dims=(3,)):
                 yield f(*local_args, **kwargs)
 
     return inner_wrapper
+
+
+def splitter(outer_generator, to, sources, mask):
+    """
+    Creates a secondary namespace by using mask as a pad to conserve only certain segments in sources
+
+    :param outer_generator:
+    :param to:
+    :param sources:
+    :param mask:
+    :return:
+    """
+    for primary_namespace in outer_generator:
+        primary_namespace[to] = {}
+        unique_vals = np.unique(primary_namespace[mask])
+        unique_vals = unique_vals[unique_vals > 0]
+
+        for val in unique_vals:
+            secondary_namespace = {}
+            primary_namespace[to][val] = secondary_namespace
+
+            for chan in sources:
+                local_mask = primary_namespace[mask] == val
+                if len(primary_namespace[chan].shape) == 2:
+                    base_chan = _2d_stack_2d_filter(primary_namespace[chan], local_mask)
+                elif len(primary_namespace[chan].shape) == 3:
+                    base_chan = _3d_stack_2d_filter(primary_namespace[chan], local_mask)
+                else:
+                    raise PipeArgError('masking impossible: dims not match, base channel %s is of dim %s',
+                                       chan, len(primary_namespace[chan].shape))
+
+                secondary_namespace[chan] = base_chan
+
+        yield primary_namespace
+
+
+def for_each(outer_generator, embedded_transformer, inside, *kwargs):
+
+    def inner_generator():
+        pass
+
+    for primary_namespace in outer_generator:
+        # no need to update the pointers, because the dumping is already provided by the
+        # generator wrapper
+        embedded_transformer(primary_namespace[inside].intervalues(), *kwargs)
+
+        yield primary_namespace
+
+
+def summarize(outer_generator, inside, *kwargs):
+    # TODO: implement. Basically collects variables from secondary namespaces to a summary table
+    pass
 
 
 def tiff_stack_2_np_arr(tiff_location):
@@ -311,3 +370,105 @@ def clear_based_on_2d_mask(stack, mask):
     return _3d_stack_2d_filter(stack, np.logical_not(mask))
 
 
+@generator_wrapper
+def binarize_3d(float_volume, mcc_cutoff):
+    binary_volume = np.zeros_like(float_volume)
+    binary_volume[float_volume > mcc_cutoff] = 1
+    return binary_volume.astype(np.bool)
+
+
+@generator_wrapper(expected_dims=(3, 3))
+def binary_inclusion_3d(float_volume, binary_volume):
+    m_q_v_i = np.median(float_volume[binary_volume])
+    return m_q_v_i
+
+
+@generator_wrapper(expected_dims=(2,))
+def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
+    if cutoff_type == 'otsu':
+        mcc_cutoff = threshold_otsu(float_surface)
+
+    elif cutoff_type == 'local otsu':
+        selem = disk(5)
+        mcc_cutoff = rank.otsu(float_surface, selem)
+
+    elif cutoff_type == 'static':
+        pass
+
+    else:
+        raise PipeArgError('unknown cutoff type')
+
+    binary_stack = np.zeros_like(float_surface).astype(np.bool)
+    binary_stack[float_surface > mcc_cutoff] = 1
+
+    return binary_stack
+
+
+@generator_wrapper(expected_dims=(2, 2))
+def skeletonize(float_surface, mito_labels, log_to=None):
+
+    topological_skeleton = skeletonize(mito_labels)
+
+    medial_skeleton, distance = medial_axis(mito_labels, return_distance=True)
+    active_threshold = np.mean(float_surface[mito_labels]) * 5  # todo: remove * 5?
+    transform_filter = np.zeros(float_surface.shape, dtype=np.uint8)
+    transform_filter[np.logical_and(medial_skeleton > 0, float_surface > active_threshold)] = 1
+    # transform filter is basically medial_skeleton on a field above threshold (mean*5 - wow)
+    medial_skeleton = transform_filter * distance
+
+
+    med_skeleton_ma = np.ma.masked_array(medial_skeleton, medial_skeleton > 0)
+
+    skeleton_convolve = ndi.convolve(med_skeleton_ma, np.ones((3, 3)), mode='constant', cval=0.0)
+    divider_convolve = ndi.convolve(transform_filter, np.ones((3, 3)), mode='constant', cval=0.0)
+    skeleton_convolve[divider_convolve > 0] = skeleton_convolve[divider_convolve > 0] / \
+                                              divider_convolve[divider_convolve > 0]
+
+    new_skeleton = np.zeros_like(medial_skeleton)
+    new_skeleton[topological_skeleton] = skeleton_convolve[topological_skeleton]
+
+    if log_to:
+        log_to[0][log_to[1]] = transform_filter
+
+    return new_skeleton
+
+
+@generator_wrapper(expected_dims=(2, 2))
+def measure_skeleton_stats(mito_labels, skeleton, min_area=3, log_to=None):
+
+    numbered_lables, _ = ndi.label(mito_labels, structure=np.ones((3, 3)))
+    numbered_skeleton, object_no = ndi.label(skeleton, structure=np.ones((3, 3)))
+
+    collector = []
+    paint_area = np.zeros_like(mito_labels)
+    paint_length = np.zeros_like(mito_labels)
+
+    for skeleton_no in range(1, object_no + 1):
+        current_skeleton = skeleton[numbered_skeleton == skeleton_no]
+        current_label = np.max(mito_labels[numbered_skeleton == skeleton_no])
+        area = np.sqrt(np.sum((mito_labels == current_label).astype(np.int8)))
+        support = len(current_skeleton)
+
+        if area < min_area:
+            skeleton[numbered_skeleton == skeleton_no] = 0
+            mito_labels[numbered_skeleton == skeleton_no] = 0
+
+        else:
+            paint_area[mito_labels == current_label] = area
+            paint_length[mito_labels == current_label] = support
+            collector.append([area, support])
+
+    collector = np.array(collector)
+
+    if log_to:
+        log_to[1][log_to[1][0]] = paint_length
+        log_to[1][log_to[1][1]] = paint_area
+
+    # collector contains information for individual mitochondria
+
+    return collector
+
+
+@generator_wrapper
+def compute_mito_fragmentation():
+    pass

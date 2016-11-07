@@ -48,7 +48,6 @@ pipeline.run()
 ```
 
 ## Remarks:
-
 In fact, we don't really need an explicit pipeline class to assem ble the pipeline.
 We use intermediate variables within the user class in order `to stitch the pipeline 
 and store the intermediate processes. We can as well plug the debug process to 
@@ -71,3 +70,33 @@ model. The sort-coming is that I am using words, so I am using a lot Python inte
 and IDEs power.
 
 A way around it is to hack the pipeline in the same manner as the guy who wrote hy (py-lisp)
+
+## Sub-segmentation
+As of now, the mechanics of our method are operation only on the full image frames.
+If we want to segment the image for the analysis any further, for instance in order to
+perform cell-specific processing, would need to:
+    - have a sencond generator wrapping / unwrapping routine
+    - second-level dictionary store in the dict. Basically a 
+    
+The second generator is basically a wrapper around the generator wrapper to execute 
+the same instruction over a generator of generators, where the inner generator is processed
+by the generator wrapper logic, whereas the outer is processed by the second layer of wrapping
+
+=> That's basically a double generator_wrapper, but that cannot support the expected dims because
+a dict is being passed.
+=> We actually just need the outer wrapper, the inner can be just the generator wrapper
+
+## Registering Run:
+As of now, it is pretty trivial to get the current revision from git and the source/dump locations
+of all the elements. to get the replicability within the pipeline.
+
+## Possible usages:
+- Assembly of generator-based sub-pipes
+- Assembly of input-output chains and then wrapping them into pipe
+- 
+
+## Organization:
+- Core functions => Non-wrapped, testable
+- Pipeline logic => Generator-wrapped, ready for assembly; wrappers
+- Pre-assembled filters
+- It is all to be imported into the actual field and 

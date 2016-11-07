@@ -486,10 +486,10 @@ def compute_mito_fragmentation(name_pattern, skeleton_labels, mch_collector, ske
     broken = np.logical_and(np.logical_or(paint_length < 20, paint_area < 5), paint_area > 1)
 
     if np.any(intact) or np.any(intact):
-        mito_summary = float(np.sum(intact.astype(np.int8))) / \
+        mito_classification_pad = float(np.sum(intact.astype(np.int8))) / \
                        float(np.sum(intact.astype(np.int8)) + np.sum(broken.astype(np.int8)))
     else:
-        mito_summary = np.nan
+        mito_classification_pad = np.nan
 
     if len(collector) == 0:
         mean_width, mean_length = [np.NaN, np.NaN]
@@ -509,7 +509,7 @@ def compute_mito_fragmentation(name_pattern, skeleton_labels, mch_collector, ske
     classification_array = np.array(classification_roll)
     classification_array = classification_array[classification_array > 0] - 1
 
-    return [mean_width, mean_length, np.mean(classification_array), mito_summary]
+    return [mean_width, mean_length, np.mean(classification_array), mito_classification_pad]
 
 
 def _3d_stack_2d_filter(_3d_stack, _2d_filter):
