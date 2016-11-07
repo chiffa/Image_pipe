@@ -80,8 +80,13 @@ def list_not_string(argument):
 # map in to out if only one output is passed to the function and function signature is n = n
 # remove the logging channel as well
 
+# can we pipe the in_dims into the out_dims if they are not explicitely provided?
+
 @doublewrap
-def generator_wrapper(f, expected_dims=(3,)):
+def generator_wrapper(f, in_dims=(3,), out_dims=None):
+
+    if out_dims is None:
+            out_dims = in_dims
 
     @wraps(f)
     def inner_wrapper(*args, **kwargs):
@@ -93,53 +98,71 @@ def generator_wrapper(f, expected_dims=(3,)):
         args = args[1:]
 
         if 'in_channel' in kwargs:
+            #Start in/out channel logic
+
             in_chan = kwargs['in_channel']  # Multiple arguments
             del kwargs['in_channel']
 
-            out_chan = ''
-            log_chan = ''
-
-            if 'out_channel' in kwargs:
-                out_chan = kwargs['out_channel']  # Single output
-                del kwargs['out_channel']
-
-                if list_not_string(out_chan) and len(out_chan) != 1:
-                    raise PipeArgError('Only one output channel can be bound')
-
-            if 'log_channel' in kwargs:
-                log_chan = kwargs['log_channel']
-                del kwargs['log_channel']
-
             if not list_not_string(in_chan):  # convert string to list of strings
-                if not out_chan:
-                    out_chan = in_chan
                 in_chan = [in_chan]
 
-            if len(in_chan) != len(expected_dims):
-                print in_chan, expected_dims
-                print len(in_chan), len(expected_dims)
-                raise PipeArgError('More channels are piped than function allows')
+            if 'out_channel' in kwargs:
+                out_chan = kwargs['out_channel']  # output explicitely provided
+                del kwargs['out_channel']
+                if not list_not_string(out_chan):  # convert string to list of strings
+                    out_chan = [out_chan]
 
-            if not out_chan:
-                raise PipeArgError('Please provide out_channel argument')
+            else:  # implicit output, bound to in_channel only if a single input is provided
+                if len(in_chan) == 1:
+                    print 'Input %s will be overwritten by function %s' % (in_chan[0], f.__name__)
+                    out_chan = in_chan
+                else:
+                    raise PipeArgError('Please provide out_channel argument')
 
-            for named_dict in iterator:
+            if len(in_chan) != len(in_dims):
+                print in_chan, in_dims
+                print len(in_chan), len(in_dims)
+                raise PipeArgError('More inbound channels are piped than function allows')
+
+            if len(out_chan) != len(out_dims):
+                print out_chan, out_dims
+                print len(out_chan), len(out_dims)
+                raise PipeArgError('More outbound channels are piped than function allows')
+
+            # end in/out channel logic
+
+            for name_space in iterator:
+                # start args prepare
                 args_puck = []
-                for i, chan in enumerate(in_chan):
-                    if len(named_dict[chan].shape) != expected_dims[i]:
-                        raise PipeArgError('Mismatched channel dimension for channel. %s is of dim %s, expected %s' %
-                                           chan, len(chan.shape), expected_dims[i])
 
-                    args_puck.append(named_dict[chan])
+                for i, chan in enumerate(in_chan):
+                    if in_dims[i] and len(name_space[chan].shape) != in_dims[i]:
+                        raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s' %
+                                           chan, len(name_space[chan].shape), in_dims[i])
+
+                    args_puck.append(name_space[chan])
+
                 local_args = tuple(args_puck) + args
-                if log_chan:
-                    kwargs['log_to'] = (named_dict, log_chan)
-                named_dict[out_chan] = f(*local_args, **kwargs)
-                yield named_dict
+                # end args prepare
+
+                return_puck = f(*local_args, **kwargs)
+
+                # start output prepare
+                if not isinstance(return_puck, tuple):
+                    return_puck = (return_puck, )
+
+                for i, chan in enumerate(out_chan):
+                    if in_dims[i] and len(return_puck[i].shape) != out_dims[i]:
+                        raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
+                                           chan, len(return_puck[i].shape), out_dims[i])
+                    name_space[chan] = args_puck[i]
+                # end output prepare
+
+                yield name_space
 
         else:
-            for named_dict in iterator:
-                local_args = (named_dict,) + args
+            for name_space in iterator:
+                local_args = (name_space,) + args
                 yield f(*local_args, **kwargs)
 
     return inner_wrapper
@@ -255,12 +278,12 @@ def smooth(current_image, smoothing_px=1.5):
     return current_image
 
 
-@generator_wrapper
+@generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
     return np.sum(current_image, axis=0)
 
 
-@generator_wrapper(expected_dims=(2,))
+@generator_wrapper(in_dims=(2,), out_dims=(2,))
 def segment_out_cells(current_image):
 
     # TODO: parameters that might need to be eventually factored in:
@@ -300,12 +323,12 @@ def segment_out_cells(current_image):
     return segmented_cells_labels
 
 
-@generator_wrapper(expected_dims=(2,))
+@generator_wrapper(in_dims=(2,), out_dims=(2,))
 def qualifying_gfp(max_sum_projection):
     return max_sum_projection > np.median(max_sum_projection[max_sum_projection > 0])
 
 
-@generator_wrapper(expected_dims=(2, 2, 2))
+@generator_wrapper(in_dims=(2, 2, 2))
 def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
 
     cells_average_gfp_list = []
@@ -325,8 +348,8 @@ def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
     return np.array(cells_average_gfp_list)
 
 
-@generator_wrapper(expected_dims=(1,))
-def detect_upper_outliers(cells_average_gfp_list, log_to=None):
+@generator_wrapper(in_dims=(1,))
+def detect_upper_outliers(cells_average_gfp_list):
     arg_sort = np.argsort(np.array(cells_average_gfp_list))
     cells_average_gfp_list = sorted(cells_average_gfp_list)
     cell_no = range(0, len(cells_average_gfp_list))
@@ -342,19 +365,15 @@ def detect_upper_outliers(cells_average_gfp_list, log_to=None):
     upper_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) <
                                                  np.array(cells_average_gfp_list)]]
 
-    # TODO: redirect the injection to a logging value in the pipe
-    # => side_store argument
     embedded_dict = {'average area value': cells_average_gfp_list,
                      'predicted area value': predicted_average_gfp,
                      'classfication bounds': std_err
                      }
-    if log_to:
-        log_to[0][log_to[1]] = embedded_dict
 
-    return upper_outliers
+    return upper_outliers, embedded_dict
 
 
-@generator_wrapper(expected_dims=(2, 1))
+@generator_wrapper(in_dims=(2, 1))
 def paint_mask(label_masks, labels_to_paint):
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
@@ -365,7 +384,7 @@ def paint_mask(label_masks, labels_to_paint):
     return mask_to_paint
 
 
-@generator_wrapper(expected_dims=(3, 2))
+@generator_wrapper(in_dims=(3, 2))
 def clear_based_on_2d_mask(stack, mask):
     return _3d_stack_2d_filter(stack, np.logical_not(mask))
 
@@ -377,13 +396,13 @@ def binarize_3d(float_volume, mcc_cutoff):
     return binary_volume.astype(np.bool)
 
 
-@generator_wrapper(expected_dims=(3, 3))
+@generator_wrapper(in_dims=(3, 3))
 def binary_inclusion_3d(float_volume, binary_volume):
     m_q_v_i = np.median(float_volume[binary_volume])
     return m_q_v_i
 
 
-@generator_wrapper(expected_dims=(2,))
+@generator_wrapper(in_dims=(2,))
 def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
     if cutoff_type == 'otsu':
         mcc_cutoff = threshold_otsu(float_surface)
@@ -404,8 +423,8 @@ def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
     return binary_stack
 
 
-@generator_wrapper(expected_dims=(2, 2))
-def skeletonize(float_surface, mito_labels, log_to=None):
+@generator_wrapper(in_dims=(2, 2))
+def skeletonize(float_surface, mito_labels):
 
     topological_skeleton = skeletonize(mito_labels)
 
@@ -427,14 +446,11 @@ def skeletonize(float_surface, mito_labels, log_to=None):
     new_skeleton = np.zeros_like(medial_skeleton)
     new_skeleton[topological_skeleton] = skeleton_convolve[topological_skeleton]
 
-    if log_to:
-        log_to[0][log_to[1]] = transform_filter
-
-    return new_skeleton
+    return new_skeleton, transform_filter
 
 
-@generator_wrapper(expected_dims=(2, 2))
-def measure_skeleton_stats(mito_labels, skeleton, min_area=3, log_to=None):
+@generator_wrapper(in_dims=(2, 2))
+def measure_skeleton_stats(mito_labels, skeleton, min_area=3):
 
     numbered_lables, _ = ndi.label(mito_labels, structure=np.ones((3, 3)))
     numbered_skeleton, object_no = ndi.label(skeleton, structure=np.ones((3, 3)))
@@ -459,14 +475,9 @@ def measure_skeleton_stats(mito_labels, skeleton, min_area=3, log_to=None):
             collector.append([area, support])
 
     collector = np.array(collector)
-
-    if log_to:
-        log_to[1][log_to[1][0]] = paint_length
-        log_to[1][log_to[1][1]] = paint_area
-
     # collector contains information for individual mitochondria
 
-    return collector
+    return collector, paint_length, paint_area
 
 
 @generator_wrapper

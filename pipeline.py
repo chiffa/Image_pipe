@@ -38,8 +38,7 @@ average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
 
 GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
                                                    in_channel='average_GFP',
-                                                   out_channel='upper_outliers',
-                                                   log_channel='outlier_log')
+                                                   out_channel=['upper_outliers', 'outlier_log'])
 
 GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
                                  in_channel=['cell_labels', 'upper_outliers'],
