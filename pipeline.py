@@ -57,11 +57,12 @@ per_cell_split = cf.splitter(no_outliers, 'per_cell',
                              mask='cell_labels')
 
 
-
-
 for payload in per_cell_split:
     for key, value in payload['per_cell'].iteritems():
-        print key,
-        print value.keys()
+        print key
+        if not (isinstance(key, basestring) and key[0] == '_'):
+            print value.keys()
+        else:
+            print
     plt.imshow(payload['GFP'][6, :, :])
     plt.show()

@@ -185,7 +185,7 @@ def splitter(outer_generator, to, sources, mask):
         unique_vals = np.unique(primary_namespace[mask])
         unique_vals = unique_vals[unique_vals > 0]
 
-        primary_namespace[to]['_pad'] = mask  # used to rebuild padded images
+        primary_namespace[to]['_pad'] = (unique_vals, mask)  # used to rebuild padded images
 
         for val in unique_vals:
             secondary_namespace = {}
@@ -208,28 +208,52 @@ def splitter(outer_generator, to, sources, mask):
 
 def for_each(outer_generator, embedded_transformer, inside, *kwargs):
 
-    def inner_generator():
-        pass
-
     for primary_namespace in outer_generator:
-        # no need to update the pointers, because the dumping is already provided by the
-        # generator wrapper
         embedded_transformer(primary_namespace[inside].intervalues(), *kwargs)
-
         yield primary_namespace
 
 
-def paint_from_mask(outer_generator, based_on, scalar_name):
-    # fills areas of mask based on scalar values that are found in scalar_names in the based_on_scope
-    pass
+def paint_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
+
+    if out_channel is None:
+        out_channel = in_anchor
+
+    for primary_namespace in outer_generator:
+        secondary_namespace = primary_namespace[based_on]
+        mask = secondary_namespace['_pad'][1]
+        mask_values = secondary_namespace['_pad'][0]
+        accumulator = np.zeros_like(mask)
+
+        for unique_value in mask_values:
+            accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor]
+
+        primary_namespace[out_channel] = accumulator
+        yield primary_namespace
 
 
-def tile_from_mask(outer_generator, based_on, tile_name):
-    # fills areas of mask based on 2d tiles found in tile_names in the based_on scope
-    pass
+def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
+
+    if out_channel is None:
+        out_channel = in_anchor
+
+    for primary_namespace in outer_generator:
+        secondary_namespace = primary_namespace[based_on]
+        mask = secondary_namespace['_pad'][1]
+        mask_values = secondary_namespace['_pad'][0]
+        accumulator = np.zeros_like(mask)
+
+        for unique_value in mask_values:
+            accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
+
+        primary_namespace[out_channel] = accumulator
+        yield primary_namespace
 
 
-def summarize(outer_generator, based_on, bound_name):
+def summarize(outer_generator, based_on, in_anchor, out_channel=None):
+
+    if out_channel is None:
+        out_channel = in_anchor
+
     # summarizes the inner generator based_on based on the bound name.
     # actually, should be a function wrapper
     pass
@@ -329,13 +353,19 @@ def segment_out_cells(current_image):
     expanded_maxi_markers = ndi.label(local_maxi, structure=np.ones((3, 3)))[0]
     segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=labels)
 
-    # # log debugging data
-    # running_debug_frame.current_image = current_image
-    # running_debug_frame.gfp_clustering_markers = gfp_clustering_markers
-    # running_debug_frame.labels = labels
-    # running_debug_frame.segmented_cells_labels = segmented_cells_labels
-    #
     return segmented_cells_labels
+
+
+@generator_wrapper(in_dims=(2,))
+def simple_segment(base_channel, min_px_radius=3):
+    numbered_skeleton, object_no = ndi.label(base_channel, structure=np.ones((3, 3)))
+
+    for label in range(1, object_no+1):
+        px_radius = np.sqrt(np.sum((numbered_skeleton == label).astype(np.int8)))
+        if px_radius < min_px_radius:
+            numbered_skeleton[numbered_skeleton == label] = 0
+
+    return numbered_skeleton
 
 
 @generator_wrapper(in_dims=(2,))
@@ -443,6 +473,7 @@ def agreeing_skeletons(float_surface, mito_labels):
     topological_skeleton = agreeing_skeletons(mito_labels)
     medial_skeleton, distance = medial_axis(mito_labels, return_distance=True)
 
+    # TODO: test without the active threshold surface
     active_threshold = np.mean(float_surface[mito_labels]) * 5  # todo: remove * 5?
     transform_filter = np.zeros(mito_labels.shape, dtype=np.uint8)
     transform_filter[np.logical_and(medial_skeleton > 0, float_surface > active_threshold)] = 1
@@ -457,103 +488,49 @@ def agreeing_skeletons(float_surface, mito_labels):
     skeleton_convolve[divider_convolve > 0] = skeleton_convolve[divider_convolve > 0] / \
                                               divider_convolve[divider_convolve > 0]
 
-    final_skeleton = np.zeros_like(medial_skeleton)
-    final_skeleton[topological_skeleton] = skeleton_convolve[topological_skeleton]
+    skeletons = np.zeros_like(medial_skeleton)
+    skeletons[topological_skeleton] = skeleton_convolve[topological_skeleton]
 
-    return final_skeleton
+    return skeletons
 
 
-# once we've segmented on the mitochondria labels and have only one skeleton inside the label
-@generator_wrapper(in_dims=(2,2), out_dims=(None,))
-def classify_fragmentation_for_mitochondria(current_label, current_skeleton):
+@generator_wrapper(in_dims=(2, 2), out_dims=(None, 2, 2, 2))
+def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     # what if no mitochondria currently found?
+    # what if we want to compare the surface of fragmented mitochondria v.s. non-fragmented ones?
 
     # well, one thing for sure, there is no way of escalating the skeleton/mito supression if they
     # are too small => we will need a filter on the label
-    pass
 
+    # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
 
-@generator_wrapper(in_dims=(2, 2), out_dims=(2, 2, 2))
-def measure_skeleton_stats(mito_labels, skeleton, min_area=3):
+    mask_items = np.unique(label_mask)
+    mask_items = mask_items[mask_items > 0].tolist()
 
-    numbered_lables, _ = ndi.label(mito_labels, structure=np.ones((3, 3)))
-    numbered_skeleton, object_no = ndi.label(skeleton, structure=np.ones((3, 3)))
-
-    collector = []
-    paint_area = np.zeros_like(mito_labels)
-    paint_length = np.zeros_like(mito_labels)
-
-
-    # technically, this is another iteration-driven location in the code.
-    for skeleton_no in range(1, object_no + 1):
-        current_skeleton = skeleton[numbered_skeleton == skeleton_no]
-        current_label = np.max(mito_labels[numbered_skeleton == skeleton_no])
-        area = np.sqrt(np.sum((mito_labels == current_label).astype(np.int8)))
-        support = len(current_skeleton)
-
-        if area < min_area:
-            skeleton[numbered_skeleton == skeleton_no] = 0
-            mito_labels[numbered_skeleton == skeleton_no] = 0
-
-        else:
-            paint_area[mito_labels == current_label] = area
-            paint_length[mito_labels == current_label] = support
-            collector.append([area, support])
-
-    collector = np.array(collector)
-    # collector contains information for individual mitochondria
-
-    return collector, paint_length, paint_area
-
-
-# this piece is overly complicated, because it was trying to do several things at the same time
-# eg. work inside the cell and per-mitochondria basis
-
-@generator_wrapper
-def compute_mito_fragmentation(skeleton_labels, skeleton, segmented_cells,
-                               collector, paint_area, paint_length):
-
-    classification_pad = np.zeros_like(segmented_cells)
+    radius_mask = np.zeros_like(label_mask)
+    support_mask = np.zeros_like(label_mask)
+    classification_mask = np.zeros_like(label_mask)
     classification_roll = []
+    weights = []
 
-    # this is done on a per-cell basis. We should be re-routing it into the split names pipeline
+    for label in mask_items:
+        px_radius = np.sqrt(np.sum((label_mask == label).astype(np.int8)))
+        support = len(skeletons[label_mask == label])
 
-    for i in range(1, np.max(segmented_cells)+1):
-        inside_the_cell = segmented_cells == i
-        mito_inside_the_cell = np.logical_and(inside_the_cell, skeleton_labels > 0)
-
-        # no mitochondria found in the current field,
-        if len(paint_length[mito_inside_the_cell]) == 0:
-            classification_roll.append(-1)
-            classification_pad[inside_the_cell] = -1
-
+        if px_radius < 5 or support < 20:
+            classification = 1  # fragment of a broken mitochondria
         else:
-            # for each mitochondria, calculate the mean and standard deviation
-            length = np.mean(np.unique(paint_length[mito_inside_the_cell]))
-            area = np.mean(np.unique(paint_area[mito_inside_the_cell]))
+            classification = 2  # mitochondria is intact
 
-            if length < 20 or area < 5:
-                classification_pad[inside_the_cell] = 1
-                classification_roll.append(1)
-            else:
-                classification_pad[inside_the_cell] = 2
-                classification_roll.append(2)
+        radius_mask += (label_mask == label).astype(np.float)*px_radius
+        support_mask += (label_mask == label).astype(np.float)*support
+        classification_mask += (label_mask == label).astype(np.float)*classification
 
-    intact = np.logical_and(paint_length > 20, paint_area > 5)
-    broken = np.logical_and(np.logical_or(paint_length < 20, paint_area < 5), paint_area > 1)
+        classification_roll.append(classification)
+        weights.append(radius_mask)
 
-    if np.any(intact) or np.any(intact):
-        mito_classification_pad = float(np.sum(intact.astype(np.int8))) / \
-                       float(np.sum(intact.astype(np.int8)) + np.sum(broken.astype(np.int8)))
-    else:
-        mito_classification_pad = np.nan
+    classification_roll = np.array(classification_roll)
+    weights = np.array(weights)
+    final_classification = np.average(classification_roll, weights=weights)
 
-    if len(collector) == 0:
-        mean_width, mean_length = [np.NaN, np.NaN]
-    else:
-        mean_width, mean_length = np.mean(collector, axis=0).tolist()
-
-    classification_array = np.array(classification_roll)
-    classification_array = classification_array[classification_array > 0] - 1
-
-    return mean_width, mean_length, np.mean(classification_array), mito_classification_pad
+    return final_classification, classification_mask, radius_mask, support_mask
