@@ -137,8 +137,10 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
                 for i, chan in enumerate(in_chan):
                     if in_dims[i] and len(name_space[chan].shape) != in_dims[i]:
-                        raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s' %
-                                           chan, len(name_space[chan].shape), in_dims[i])
+                        print f.__name__
+                        print chan, len(name_space[chan].shape), in_dims[i]
+                        raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s'%
+                                           (chan, len(name_space[chan].shape), in_dims[i]))
 
                     args_puck.append(name_space[chan])
 
@@ -152,10 +154,10 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                     return_puck = (return_puck, )
 
                 for i, chan in enumerate(out_chan):
-                    if in_dims[i] and len(return_puck[i].shape) != out_dims[i]:
+                    if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
                         raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
-                                           chan, len(return_puck[i].shape), out_dims[i])
-                    name_space[chan] = args_puck[i]
+                                           (chan, len(return_puck[i].shape), out_dims[i]))
+                    name_space[chan] = return_puck[i]
                 # end output prepare
 
                 yield name_space
@@ -183,6 +185,8 @@ def splitter(outer_generator, to, sources, mask):
         unique_vals = np.unique(primary_namespace[mask])
         unique_vals = unique_vals[unique_vals > 0]
 
+        primary_namespace[to]['_pad'] = mask  # used to rebuild padded images
+
         for val in unique_vals:
             secondary_namespace = {}
             primary_namespace[to][val] = secondary_namespace
@@ -194,8 +198,8 @@ def splitter(outer_generator, to, sources, mask):
                 elif len(primary_namespace[chan].shape) == 3:
                     base_chan = _3d_stack_2d_filter(primary_namespace[chan], local_mask)
                 else:
-                    raise PipeArgError('masking impossible: dims not match, base channel %s is of dim %s',
-                                       chan, len(primary_namespace[chan].shape))
+                    raise PipeArgError('masking impossible: dims not match, base channel %s is of dim %s' %
+                                       (chan, len(primary_namespace[chan].shape)))
 
                 secondary_namespace[chan] = base_chan
 
@@ -215,8 +219,19 @@ def for_each(outer_generator, embedded_transformer, inside, *kwargs):
         yield primary_namespace
 
 
-def summarize(outer_generator, inside, *kwargs):
-    # TODO: implement. Basically collects variables from secondary namespaces to a summary table
+def paint_from_mask(outer_generator, based_on, scalar_name):
+    # fills areas of mask based on scalar values that are found in scalar_names in the based_on_scope
+    pass
+
+
+def tile_from_mask(outer_generator, based_on, tile_name):
+    # fills areas of mask based on 2d tiles found in tile_names in the based_on scope
+    pass
+
+
+def summarize(outer_generator, based_on, bound_name):
+    # summarizes the inner generator based_on based on the bound name.
+    # actually, should be a function wrapper
     pass
 
 
@@ -283,7 +298,7 @@ def sum_projection(current_image):
     return np.sum(current_image, axis=0)
 
 
-@generator_wrapper(in_dims=(2,), out_dims=(2,))
+@generator_wrapper(in_dims=(2,))
 def segment_out_cells(current_image):
 
     # TODO: parameters that might need to be eventually factored in:
@@ -323,12 +338,12 @@ def segment_out_cells(current_image):
     return segmented_cells_labels
 
 
-@generator_wrapper(in_dims=(2,), out_dims=(2,))
+@generator_wrapper(in_dims=(2,))
 def qualifying_gfp(max_sum_projection):
     return max_sum_projection > np.median(max_sum_projection[max_sum_projection > 0])
 
 
-@generator_wrapper(in_dims=(2, 2, 2))
+@generator_wrapper(in_dims=(2, 2, 2), out_dims=(1,))
 def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
 
     cells_average_gfp_list = []
@@ -348,7 +363,7 @@ def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
     return np.array(cells_average_gfp_list)
 
 
-@generator_wrapper(in_dims=(1,))
+@generator_wrapper(in_dims=(1,), out_dims=(1, None))
 def detect_upper_outliers(cells_average_gfp_list):
     arg_sort = np.argsort(np.array(cells_average_gfp_list))
     cells_average_gfp_list = sorted(cells_average_gfp_list)
@@ -373,7 +388,7 @@ def detect_upper_outliers(cells_average_gfp_list):
     return upper_outliers, embedded_dict
 
 
-@generator_wrapper(in_dims=(2, 1))
+@generator_wrapper(in_dims=(2, 1), out_dims=(2,))
 def paint_mask(label_masks, labels_to_paint):
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
@@ -384,7 +399,7 @@ def paint_mask(label_masks, labels_to_paint):
     return mask_to_paint
 
 
-@generator_wrapper(in_dims=(3, 2))
+@generator_wrapper(in_dims=(3, 2), out_dims=(3,))
 def clear_based_on_2d_mask(stack, mask):
     return _3d_stack_2d_filter(stack, np.logical_not(mask))
 
@@ -396,13 +411,13 @@ def binarize_3d(float_volume, mcc_cutoff):
     return binary_volume.astype(np.bool)
 
 
-@generator_wrapper(in_dims=(3, 3))
+@generator_wrapper(in_dims=(3, 3), out_dims=(None,))
 def binary_inclusion_3d(float_volume, binary_volume):
     m_q_v_i = np.median(float_volume[binary_volume])
     return m_q_v_i
 
 
-@generator_wrapper(in_dims=(2,))
+@generator_wrapper(in_dims=(2,), out_dims=(2,))
 def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
     if cutoff_type == 'otsu':
         mcc_cutoff = threshold_otsu(float_surface)
@@ -423,33 +438,42 @@ def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
     return binary_stack
 
 
-@generator_wrapper(in_dims=(2, 2))
-def skeletonize(float_surface, mito_labels):
-
-    topological_skeleton = skeletonize(mito_labels)
-
+@generator_wrapper(in_dims=(2, 2), out_dims=(2,))
+def agreeing_skeletons(float_surface, mito_labels):
+    topological_skeleton = agreeing_skeletons(mito_labels)
     medial_skeleton, distance = medial_axis(mito_labels, return_distance=True)
+
     active_threshold = np.mean(float_surface[mito_labels]) * 5  # todo: remove * 5?
-    transform_filter = np.zeros(float_surface.shape, dtype=np.uint8)
+    transform_filter = np.zeros(mito_labels.shape, dtype=np.uint8)
     transform_filter[np.logical_and(medial_skeleton > 0, float_surface > active_threshold)] = 1
-    # transform filter is basically medial_skeleton on a field above threshold (mean*5 - wow)
+    # transform filter is basically medial_skeleton on a field above threshold (mean*5 - wow, that's a lot)
     medial_skeleton = transform_filter * distance
 
-
-    med_skeleton_ma = np.ma.masked_array(medial_skeleton, medial_skeleton > 0)
-
-    skeleton_convolve = ndi.convolve(med_skeleton_ma, np.ones((3, 3)), mode='constant', cval=0.0)
-    divider_convolve = ndi.convolve(transform_filter, np.ones((3, 3)), mode='constant', cval=0.0)
+    median_skeleton_masked = np.ma.masked_array(medial_skeleton, medial_skeleton > 0)
+    skeleton_convolve = ndi.convolve(median_skeleton_masked, np.ones((3, 3)),
+                                     mode='constant', cval=0.0)
+    divider_convolve = ndi.convolve(transform_filter, np.ones((3, 3)),
+                                    mode='constant', cval=0.0)
     skeleton_convolve[divider_convolve > 0] = skeleton_convolve[divider_convolve > 0] / \
                                               divider_convolve[divider_convolve > 0]
 
-    new_skeleton = np.zeros_like(medial_skeleton)
-    new_skeleton[topological_skeleton] = skeleton_convolve[topological_skeleton]
+    final_skeleton = np.zeros_like(medial_skeleton)
+    final_skeleton[topological_skeleton] = skeleton_convolve[topological_skeleton]
 
-    return new_skeleton, transform_filter
+    return final_skeleton
 
 
-@generator_wrapper(in_dims=(2, 2))
+# once we've segmented on the mitochondria labels and have only one skeleton inside the label
+@generator_wrapper(in_dims=(2,2), out_dims=(None,))
+def classify_fragmentation_for_mitochondria(current_label, current_skeleton):
+    # what if no mitochondria currently found?
+
+    # well, one thing for sure, there is no way of escalating the skeleton/mito supression if they
+    # are too small => we will need a filter on the label
+    pass
+
+
+@generator_wrapper(in_dims=(2, 2), out_dims=(2, 2, 2))
 def measure_skeleton_stats(mito_labels, skeleton, min_area=3):
 
     numbered_lables, _ = ndi.label(mito_labels, structure=np.ones((3, 3)))
@@ -459,6 +483,8 @@ def measure_skeleton_stats(mito_labels, skeleton, min_area=3):
     paint_area = np.zeros_like(mito_labels)
     paint_length = np.zeros_like(mito_labels)
 
+
+    # technically, this is another iteration-driven location in the code.
     for skeleton_no in range(1, object_no + 1):
         current_skeleton = skeleton[numbered_skeleton == skeleton_no]
         current_label = np.max(mito_labels[numbered_skeleton == skeleton_no])
@@ -480,6 +506,54 @@ def measure_skeleton_stats(mito_labels, skeleton, min_area=3):
     return collector, paint_length, paint_area
 
 
+# this piece is overly complicated, because it was trying to do several things at the same time
+# eg. work inside the cell and per-mitochondria basis
+
 @generator_wrapper
-def compute_mito_fragmentation():
-    pass
+def compute_mito_fragmentation(skeleton_labels, skeleton, segmented_cells,
+                               collector, paint_area, paint_length):
+
+    classification_pad = np.zeros_like(segmented_cells)
+    classification_roll = []
+
+    # this is done on a per-cell basis. We should be re-routing it into the split names pipeline
+
+    for i in range(1, np.max(segmented_cells)+1):
+        inside_the_cell = segmented_cells == i
+        mito_inside_the_cell = np.logical_and(inside_the_cell, skeleton_labels > 0)
+
+        # no mitochondria found in the current field,
+        if len(paint_length[mito_inside_the_cell]) == 0:
+            classification_roll.append(-1)
+            classification_pad[inside_the_cell] = -1
+
+        else:
+            # for each mitochondria, calculate the mean and standard deviation
+            length = np.mean(np.unique(paint_length[mito_inside_the_cell]))
+            area = np.mean(np.unique(paint_area[mito_inside_the_cell]))
+
+            if length < 20 or area < 5:
+                classification_pad[inside_the_cell] = 1
+                classification_roll.append(1)
+            else:
+                classification_pad[inside_the_cell] = 2
+                classification_roll.append(2)
+
+    intact = np.logical_and(paint_length > 20, paint_area > 5)
+    broken = np.logical_and(np.logical_or(paint_length < 20, paint_area < 5), paint_area > 1)
+
+    if np.any(intact) or np.any(intact):
+        mito_classification_pad = float(np.sum(intact.astype(np.int8))) / \
+                       float(np.sum(intact.astype(np.int8)) + np.sum(broken.astype(np.int8)))
+    else:
+        mito_classification_pad = np.nan
+
+    if len(collector) == 0:
+        mean_width, mean_length = [np.NaN, np.NaN]
+    else:
+        mean_width, mean_length = np.mean(collector, axis=0).tolist()
+
+    classification_array = np.array(classification_roll)
+    classification_array = classification_array[classification_array > 0] - 1
+
+    return mean_width, mean_length, np.mean(classification_array), mito_classification_pad
