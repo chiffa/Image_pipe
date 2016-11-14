@@ -11,7 +11,7 @@ translator = {'w1488': 0,
               'w2561': 1
               }
 
-source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis",
+source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis06152016",
                                matching_map=translator)
 
 # that architecture actually removes the need for the debug line
@@ -56,13 +56,26 @@ per_cell_split = cf.splitter(no_outliers, 'per_cell',
                              sources=['GFP', 'mCherry'],
                              mask='cell_labels')
 
+per_cell_mito = cf.for_each(per_cell_split, cf.binarize_2d, 'per_cell',
+                            in_channel='mCherry',
+                            out_channel='mito_binary')
 
-for payload in per_cell_split:
+skeletonized = cf.for_each(per_cell_mito, cf.agreeing_skeletons, 'per_cell',
+                           in_channel=['mCherry', 'mito_binary'],
+                           out_channel='mCh_skeleton')
+
+classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
+                         in_channel=['mito_binary', 'mCh_skeleton'],
+                         out_channel=['final_classification', 'classification_mask',
+                                      'radius_mask', 'support_mask'])
+
+
+for payload in classified:
     for key, value in payload['per_cell'].iteritems():
         print key
         if not (isinstance(key, basestring) and key[0] == '_'):
             print value.keys()
         else:
-            print
+            print 'Not a namespace'
     plt.imshow(payload['GFP'][6, :, :])
     plt.show()

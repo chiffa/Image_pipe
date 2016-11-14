@@ -206,11 +206,12 @@ def splitter(outer_generator, to, sources, mask):
         yield primary_namespace
 
 
-def for_each(outer_generator, embedded_transformer, inside, *kwargs):
+def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
-        embedded_transformer(primary_namespace[inside].intervalues(), *kwargs)
+        embedded_transformer(primary_namespace[inside].itervalues(), **kwargs)
         yield primary_namespace
+
 
 
 def paint_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
