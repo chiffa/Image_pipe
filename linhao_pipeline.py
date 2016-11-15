@@ -25,7 +25,11 @@ projected_GFP = cf.sum_projection(smoothed_GFP,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
 
-segmented_GFP = cf.segment_out_cells(projected_GFP,
+projected_mCh = cf.max_projection(projected_GFP,
+                                  in_channel='mCherry',
+                                  out_channel='projected_mCh')
+
+segmented_GFP = cf.segment_out_cells(projected_mCh,
                                      in_channel='projected_GFP',
                                      out_channel='cell_labels')
 
@@ -49,42 +53,55 @@ no_outliers = cf.clear_based_on_2d_mask(GFP_outliers,
                                         in_channel=['GFP', 'GFP_outliers'],
                                         out_channel='GFP')
 
-rendered = rdr.gfp_render(no_outliers,
-                          in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
+gfp_rendered = rdr.gfp_render(no_outliers,
+                              in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
                                       'cell_labels', 'average_GFP_pad', 'average_GFP',
                                       'pred_gpf_av', 'gfp_std', 'upper_outliers', 'GFP_outliers'],
-                          out_channel='_')
+                              out_channel='_')
 
-cleared = cf.clear_based_on_2d_mask(rendered,
-                                        in_channel=['mCherry', 'GFP_outliers'],
-                                        out_channel='mCherry')
+cleared = cf.clear_based_on_2d_mask(gfp_rendered,
+                                    in_channel=['mCherry', 'GFP_outliers'],
+                                    out_channel='mCherry')
 
 per_cell_split = cf.splitter(cleared, 'per_cell',
-                             sources=['GFP', 'mCherry'],
+                             sources=['mCherry', 'projected_mCh'],
                              mask='cell_labels')
 
-per_cell_mito = cf.for_each(per_cell_split, cf.binarize_2d, 'per_cell',
-                            in_channel='mCherry',
+per_cell_mito = cf.for_each(per_cell_split, cf.binarize_2d, 'per_cell', cutoff_type='otsu',
+                            in_channel='projected_mCh',
                             out_channel='mito_binary')
 
-skeletonized = cf.for_each(per_cell_mito, cf.agreeing_skeletons, 'per_cell',
-                           in_channel=['mCherry', 'mito_binary'],
+segmented_mito = cf.for_each(per_cell_mito, cf.simple_segment, 'per_cell',
+                            in_channel='mito_binary',
+                            out_channel='mito_labels')
+
+skeletonized = cf.for_each(segmented_mito, cf.agreeing_skeletons, 'per_cell',
+                           in_channel=['projected_mCh', 'mito_binary'],
                            out_channel='mCh_skeleton')
 
 classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
-                         in_channel=['mito_binary', 'mCh_skeleton'],
+                         in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])
 
+mito_tiled = cf.tile_from_mask(classified, 'per_cell', 'mito_binary')
 
-# TODO: tiling skeletons, mitochondria and classifications
+skeleton_tiled = cf.tile_from_mask(mito_tiled, 'per_cell', 'mCh_skeleton')
 
-for payload in classified:
-    for key, value in payload['per_cell'].iteritems():
-        print key
-        if not (isinstance(key, basestring) and key[0] == '_'):
-            print value.keys()
-        else:
-            print 'Not a namespace'
-    plt.imshow(payload['GFP'][6, :, :])
-    plt.show()
+classification_tiled = cf.tile_from_mask(skeleton_tiled, 'per_cell', 'classification_mask')
+
+cell_class_tiled = cf.paint_from_mask(classification_tiled, 'per_cell', 'final_classification')
+
+rad_mask_tiled = cf.tile_from_mask(cell_class_tiled, 'per_cell', 'radius_mask')
+
+supp_mask_tiled = cf.tile_from_mask(rad_mask_tiled, 'per_cell', 'support_mask')
+
+final_namespace = rdr.mCh_render(supp_mask_tiled,
+                                 in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+                                             'mCh_skeleton', 'classification_mask', 'final_classification',
+                                             'cell_labels', 'radius_mask', 'support_mask'],
+                                 out_channel='_')
+
+
+for payload in final_namespace:
+    pass

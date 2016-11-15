@@ -30,8 +30,15 @@ dtype2bits = {'uint8': 8,
               'uint16': 16,
               'uint32': 32}
 
+
 class PipeArgError(ValueError):
     pass
+
+
+def pad_skipping_iterator(secondary_namespace):
+    for key, value in secondary_namespace.iteritems():
+        if key != '_pad':
+            yield value
 
 
 def doublewrap(f):
@@ -188,7 +195,7 @@ def splitter(outer_generator, to, sources, mask):
         unique_vals = np.unique(primary_namespace[mask])
         unique_vals = unique_vals[unique_vals > 0]
 
-        primary_namespace[to]['_pad'] = (unique_vals, mask)  # used to rebuild padded images
+        primary_namespace[to]['_pad'] = (unique_vals, primary_namespace[mask])  # used to rebuild padded images
 
         for val in unique_vals:
             secondary_namespace = {}
@@ -212,9 +219,10 @@ def splitter(outer_generator, to, sources, mask):
 def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
-        embedded_transformer(primary_namespace[inside].itervalues(), **kwargs)
+        secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
+        for _ in secondary_generator:  # forces secondary generator to evaluate
+            pass
         yield primary_namespace
-
 
 
 def paint_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
@@ -228,7 +236,9 @@ def paint_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
         mask_values = secondary_namespace['_pad'][0]
         accumulator = np.zeros_like(mask)
 
-        for unique_value in mask_values:
+        for i, unique_value in enumerate(mask_values):
+            if i == 0:
+                accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor]
 
         primary_namespace[out_channel] = accumulator
@@ -246,7 +256,9 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
         mask_values = secondary_namespace['_pad'][0]
         accumulator = np.zeros_like(mask)
 
-        for unique_value in mask_values:
+        for i, unique_value in enumerate(mask_values):
+            if i == 0:
+                accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
 
         primary_namespace[out_channel] = accumulator
@@ -326,6 +338,11 @@ def sum_projection(current_image):
     return np.sum(current_image, axis=0)
 
 
+@generator_wrapper(in_dims=(3,), out_dims=(2,))
+def max_projection(current_image):
+    return np.max(current_image, axis=0)
+
+
 @generator_wrapper(in_dims=(2,))
 def segment_out_cells(current_image):
 
@@ -381,7 +398,7 @@ def qualifying_gfp(max_sum_projection):
 def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
 
     cells_average_gfp_list = []
-    cells_average_gfp_pad = np.zeros_like(cell_labels)
+    average_gfp_pad = np.zeros_like(cell_labels).astype(np.float32)
 
     for i in range(1, np.max(cell_labels) + 1):
 
@@ -394,9 +411,9 @@ def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
         gfp_percentile = np.percentile(current_cell_gfp, 50)
         gfp_average = np.average(max_sum_projection[np.logical_and(current_mask, max_sum_projection > gfp_percentile)])
         cells_average_gfp_list.append(gfp_average)
-        cells_average_gfp_pad[current_mask] = gfp_average
+        average_gfp_pad[current_mask] = gfp_average
 
-    return np.array(cells_average_gfp_list), cells_average_gfp_pad
+    return np.array(cells_average_gfp_list), average_gfp_pad
 
 
 @generator_wrapper(in_dims=(1,), out_dims=(1, 1, None))
@@ -471,11 +488,12 @@ def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
 
 @generator_wrapper(in_dims=(2, 2), out_dims=(2,))
 def agreeing_skeletons(float_surface, mito_labels):
-    topological_skeleton = agreeing_skeletons(mito_labels)
+    topological_skeleton = skeletonize(mito_labels)
+
     medial_skeleton, distance = medial_axis(mito_labels, return_distance=True)
 
     # TODO: test without the active threshold surface
-    active_threshold = np.mean(float_surface[mito_labels]) * 5  # todo: remove * 5?
+    active_threshold = np.mean(float_surface[mito_labels])
     transform_filter = np.zeros(mito_labels.shape, dtype=np.uint8)
     transform_filter[np.logical_and(medial_skeleton > 0, float_surface > active_threshold)] = 1
     # transform filter is basically medial_skeleton on a field above threshold (mean*5 - wow, that's a lot)
@@ -504,34 +522,34 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     # are too small => we will need a filter on the label
 
     # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
-
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 
-    radius_mask = np.zeros_like(label_mask)
-    support_mask = np.zeros_like(label_mask)
-    classification_mask = np.zeros_like(label_mask)
+    radius_mask = np.zeros_like(label_mask).astype(np.float)
+    support_mask = np.zeros_like(label_mask).astype(np.float)
+    classification_mask = np.zeros_like(label_mask).astype(np.int)
     classification_roll = []
     weights = []
 
     for label in mask_items:
-        px_radius = np.sqrt(np.sum((label_mask == label).astype(np.int8)))
-        support = len(skeletons[label_mask == label])
+        px_radius = np.sqrt(np.sum((label_mask == label).astype(np.int)))
+        support = np.sum((skeletons[label_mask == label] > 0).astype(np.int))
 
         if px_radius < 5 or support < 20:
             classification = 1  # fragment of a broken mitochondria
         else:
-            classification = 2  # mitochondria is intact
+            classification = -1  # mitochondria is intact
 
         radius_mask += (label_mask == label).astype(np.float)*px_radius
         support_mask += (label_mask == label).astype(np.float)*support
-        classification_mask += (label_mask == label).astype(np.float)*classification
+        classification_mask += (label_mask == label).astype(np.int)*classification
 
         classification_roll.append(classification)
-        weights.append(radius_mask)
+        weights.append(px_radius)
 
     classification_roll = np.array(classification_roll)
     weights = np.array(weights)
+
     final_classification = np.average(classification_roll, weights=weights)
 
     return final_classification, classification_mask, radius_mask, support_mask

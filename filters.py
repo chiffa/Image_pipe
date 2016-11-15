@@ -90,3 +90,7 @@ def name_channels(stack_group_generator, channel_names):
 
         yield group_dict
 
+
+def Akshay_traverse(main_root):
+    pass
+

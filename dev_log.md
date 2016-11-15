@@ -99,3 +99,6 @@ of all the elements. to get the replicability within the pipeline.
 - Pipeline logic => Generator-wrapped, ready for assembly; wrappers
 - Pre-assembled filters
 - It is all to be imported into the actual field and 
+
+## From the usage
+- we definitely need a pipeline assembly - it is too easy to forget the pipe redirections between the generators
