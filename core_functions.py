@@ -149,6 +149,9 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
                 return_puck = f(*local_args, **kwargs)
 
+                if return_puck is None and out_chan[0] == '_':
+                    yield name_space
+
                 # start output prepare
                 if not isinstance(return_puck, tuple):
                     return_puck = (return_puck, )
@@ -374,10 +377,11 @@ def qualifying_gfp(max_sum_projection):
     return max_sum_projection > np.median(max_sum_projection[max_sum_projection > 0])
 
 
-@generator_wrapper(in_dims=(2, 2, 2), out_dims=(1,))
+@generator_wrapper(in_dims=(2, 2, 2), out_dims=(1, 2))
 def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
 
     cells_average_gfp_list = []
+    cells_average_gfp_pad = np.zeros_like(cell_labels)
 
     for i in range(1, np.max(cell_labels) + 1):
 
@@ -390,11 +394,12 @@ def aq_gfp_per_region(cell_labels, max_sum_projection, qualifying_gfp_mask):
         gfp_percentile = np.percentile(current_cell_gfp, 50)
         gfp_average = np.average(max_sum_projection[np.logical_and(current_mask, max_sum_projection > gfp_percentile)])
         cells_average_gfp_list.append(gfp_average)
+        cells_average_gfp_pad[current_mask] = gfp_average
 
-    return np.array(cells_average_gfp_list)
+    return np.array(cells_average_gfp_list), cells_average_gfp_pad
 
 
-@generator_wrapper(in_dims=(1,), out_dims=(1, None))
+@generator_wrapper(in_dims=(1,), out_dims=(1, 1, None))
 def detect_upper_outliers(cells_average_gfp_list):
     arg_sort = np.argsort(np.array(cells_average_gfp_list))
     cells_average_gfp_list = sorted(cells_average_gfp_list)
@@ -411,12 +416,7 @@ def detect_upper_outliers(cells_average_gfp_list):
     upper_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) <
                                                  np.array(cells_average_gfp_list)]]
 
-    embedded_dict = {'average area value': cells_average_gfp_list,
-                     'predicted area value': predicted_average_gfp,
-                     'classfication bounds': std_err
-                     }
-
-    return upper_outliers, embedded_dict
+    return upper_outliers, predicted_average_gfp, std_err
 
 
 @generator_wrapper(in_dims=(2, 1), out_dims=(2,))

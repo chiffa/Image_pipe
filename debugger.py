@@ -140,5 +140,13 @@ class CustomDebugger(Debugger):
     frame3 = DebugFrame3()
 
 
+# TODO: Redo it in terms of the rendering of the final namespace:
+#   - if item exists, bind it to namespace and render according to the procedure
+#   - if the item doesn't exist, leave empty space in the render frame.
+
+
+
+
+
 if __name__ == "__main__":
     debugger = CustomDebugger()

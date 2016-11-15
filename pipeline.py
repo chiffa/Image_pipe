@@ -2,6 +2,7 @@ import debugger_skeleton
 import filters as uf
 import core_functions as cf
 from matplotlib import pyplot as plt
+import render as rdr
 
 # different debugger injection can be performed by doing a
 # import module_of_interest
@@ -34,11 +35,11 @@ qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
 
 average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
                                    in_channel=['cell_labels', 'projected_GFP', 'qualifying_GFP'],
-                                   out_channel='average_GFP')
+                                   out_channel=['average_GFP', 'average_GFP_pad'])
 
 GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
                                                    in_channel='average_GFP',
-                                                   out_channel=['upper_outliers', 'outlier_log'])
+                                                   out_channel=['upper_outliers', 'pred_gpf_av', 'gfp_std'])
 
 GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
                                  in_channel=['cell_labels', 'upper_outliers'],
@@ -48,11 +49,17 @@ no_outliers = cf.clear_based_on_2d_mask(GFP_outliers,
                                         in_channel=['GFP', 'GFP_outliers'],
                                         out_channel='GFP')
 
-no_outliers = cf.clear_based_on_2d_mask(no_outliers,
+rendered = rdr.gfp_render(no_outliers,
+                          in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
+                                      'cell_labels', 'average_GFP_pad', 'average_GFP',
+                                      'pred_gpf_av', 'gfp_std', 'upper_outliers', 'GFP_outliers'],
+                          out_channel='_')
+
+cleared = cf.clear_based_on_2d_mask(rendered,
                                         in_channel=['mCherry', 'GFP_outliers'],
                                         out_channel='mCherry')
 
-per_cell_split = cf.splitter(no_outliers, 'per_cell',
+per_cell_split = cf.splitter(cleared, 'per_cell',
                              sources=['GFP', 'mCherry'],
                              mask='cell_labels')
 
@@ -69,6 +76,8 @@ classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondri
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])
 
+
+# TODO: tiling skeletons, mitochondria and classifications
 
 for payload in classified:
     for key, value in payload['per_cell'].iteritems():

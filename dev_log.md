@@ -93,7 +93,6 @@ of all the elements. to get the replicability within the pipeline.
 ## Possible usages:
 - Assembly of generator-based sub-pipes
 - Assembly of input-output chains and then wrapping them into pipe
-- 
 
 ## Organization:
 - Core functions => Non-wrapped, testable
