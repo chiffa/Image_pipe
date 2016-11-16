@@ -102,3 +102,5 @@ of all the elements. to get the replicability within the pipeline.
 
 ## From the usage
 - we definitely need a pipeline assembly - it is too easy to forget the pipe redirections between the generators
+- it is a bit frustrating to be unable to add elementary modifications to channels when they are injected
+- 

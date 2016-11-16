@@ -9,19 +9,20 @@ from scipy import stats
 from collections import defaultdict
 from csv import writer
 from skimage.segmentation import random_walker
-from skimage.morphology import closing
+from skimage.morphology import closing, dilation
 from scipy import ndimage as ndi
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from skimage.morphology import disk
 from skimage.morphology import skeletonize, medial_axis
-from skimage.filters import threshold_otsu, rank
+from skimage.filters import threshold_otsu, rank, median
 from scipy.stats import t
 from scipy.stats import ttest_ind
 from itertools import combinations
 from functools import wraps
 import types
 import collections
+import debug_renders as dbg
 
 debugger = CustomDebugger()
 
@@ -81,13 +82,8 @@ def list_not_string(argument):
         raise PipeArgError("Expected a name of channel or list of names. Found: '%s' " % argument)
 
 
-# TODO: convert to multiple input/output as well
-# allow to override the expected dims check
-# allow to perform expected output dims check => Problem, the mapping rules are not very clear.
-# map in to out if only one output is passed to the function and function signature is n = n
-# remove the logging channel as well
-
-# can we pipe the in_dims into the out_dims if they are not explicitely provided?
+# TODO: add vectorization (same operation for every element in the inputs - smoothing, stabilization)
+#   - strategy pattern
 
 @doublewrap
 def generator_wrapper(f, in_dims=(3,), out_dims=None):
@@ -127,11 +123,13 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                     raise PipeArgError('Please provide out_channel argument')
 
             if len(in_chan) != len(in_dims):
+                print f.__name__
                 print in_chan, in_dims
                 print len(in_chan), len(in_dims)
                 raise PipeArgError('More inbound channels are piped than function allows')
 
             if len(out_chan) != len(out_dims):
+                print f.__name__
                 print out_chan, out_dims
                 print len(out_chan), len(out_dims)
                 raise PipeArgError('More outbound channels are piped than function allows')
@@ -314,10 +312,20 @@ def _2d_stack_2d_filter(_2d_stack, _2d_filter):
     return new_stack
 
 
-@generator_wrapper
-def gamma_stabilize(current_image, alpha_clean=5):
+@generator_wrapper(in_dims=(None,))
+def gamma_stabilize(current_image, alpha_clean=5, min='min'):
     bits = dtype2bits[current_image.dtype.name]
-    stabilized = (current_image - np.min(current_image))/(float(2**bits) - np.min(current_image))
+    if min == 'min':
+        inner_min = np.min(current_image)
+    elif min == '1q':
+        inner_min = np.percentile(current_image, 25)
+    elif min == '5p':
+        inner_min = np.percentile(current_image, 5)
+    elif min == 'median':
+        inner_min = np.median(current_image)
+    else:
+        raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
+    stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
 
     return stabilized
@@ -326,9 +334,17 @@ def gamma_stabilize(current_image, alpha_clean=5):
 @generator_wrapper
 def smooth(current_image, smoothing_px=1.5):
     for i in range(0, current_image.shape[0]):
-            current_image[i, :, :] = gaussian_filter(current_image[i, :, :],
-                                                     smoothing_px, mode='constant')
-            current_image[current_image < 5*np.mean(current_image)] = 0
+        current_image[i, :, :] = gaussian_filter(current_image[i, :, :],
+                                                 smoothing_px, mode='constant')
+        current_image[current_image < 5*np.mean(current_image)] = 0
+
+    return current_image
+
+
+@generator_wrapper(in_dims=(2,))
+def smooth_2d(current_image, smoothing_px=1.5):
+    current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
+    current_image[current_image < 5*np.mean(current_image)] = 0
 
     return current_image
 
@@ -344,24 +360,74 @@ def max_projection(current_image):
 
 
 @generator_wrapper(in_dims=(2,))
-def segment_out_cells(current_image):
+def random_walker_binarize(base_image, _dilation=0):
+    gfp_clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
 
-    # TODO: parameters that might need to be eventually factored in:
-    # upper/ lower bounds
-    # min distance between cores
-    # abs threshold
-    # closing_size, fusing size
+    # To try: add a grey area around the boundary between black and white
 
-    gfp_clustering_markers = np.zeros(current_image.shape, dtype=np.uint8)
-    # random walker segment
-    gfp_clustering_markers[current_image > np.mean(current_image) * 2] = 2
-    gfp_clustering_markers[current_image < np.mean(current_image) * 0.20] = 1
-    labels = random_walker(current_image, gfp_clustering_markers, beta=10, mode='bf')
-    # round up the labels and set the background to 0 from 1
+    gfp_clustering_markers[base_image > np.mean(base_image) * 2] = 2
+    gfp_clustering_markers[base_image < np.mean(base_image) * 0.20] = 1
+
+    binary_labels = random_walker(base_image, gfp_clustering_markers, beta=10, mode='bf') - 1
+
+    if _dilation:
+        selem = disk(_dilation)
+        binary_labels = dilation(binary_labels, selem)
+
+    return binary_labels
+
+
+@generator_wrapper(in_dims=(2,), out_dims=(2,))
+def int_robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
+    clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
+
+    # To try: add a grey area around the boundary between black and white
+
+    # TODO: local approach:
+    # smoothed area, grayed area, then otsu threshold with a typical separation distance
+
+    selem = disk(heterogeity_size)
+    smoothed = gaussian_filter(base_image, 3, mode='constant')
+    grayed_area = median(smoothed, selem)
+
+    selem2 = disk(feature_size)
+    local_otsu = rank.otsu(grayed_area, selem2)
+
+    clustering_markers[grayed_area < local_otsu * 0.1] = 1
+    clustering_markers[grayed_area > local_otsu * 1.1] = 2
+
+    binary_labels = random_walker(smoothed, clustering_markers, beta=10, mode='bf') - 1
+
+    if _dilation:
+        selem = disk(_dilation)
+        binary_labels = dilation(binary_labels, selem)
+
+    # dbg.robust_binarize_debug(base_image, smoothed, grayed_area, local_otsu,
+    #                           clustering_markers, binary_labels)
+
+    return binary_labels
+
+
+@generator_wrapper(in_dims=(2, 2), out_dims=(2,))
+def exclude_region(exclusion_mask, field, _dilation=5):
+    _exclusion_mask = np.zeros_like(exclusion_mask)
+    _exclusion_mask[exclusion_mask > 0] = 1
+
+    if _dilation:
+        selem = disk(_dilation)
+        _exclusion_mask = dilation(_exclusion_mask, selem)
+
+    excluded = np.zeros_like(field)
+    excluded[np.logical_not(_exclusion_mask)] = field[np.logical_not(_exclusion_mask)]
+
+    return excluded
+
+
+@generator_wrapper(in_dims=(2,))
+def improved_watershed(binary_base):
     sel_elem = disk(2)
-    labels = closing(labels, sel_elem)
-    labels -= 1
-    # prepare distances for the watershed
+    labels = closing(binary_base, sel_elem)
+
     distance = ndi.distance_transform_edt(labels)
     local_maxi = peak_local_max(distance,
                                 indices=False,  # we want the image mask, not peak position
@@ -377,21 +443,43 @@ def segment_out_cells(current_image):
     return segmented_cells_labels
 
 
-@generator_wrapper(in_dims=(2,))
-def simple_segment(base_channel, min_px_radius=3):
-    numbered_skeleton, object_no = ndi.label(base_channel, structure=np.ones((3, 3)))
+@generator_wrapper(in_dims=(2, 2,), out_dims=(2,))
+def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intensity=0):
+    labeled_field, object_no = ndi.label(binary_channel, structure=np.ones((3, 3)))
 
     for label in range(1, object_no+1):
-        px_radius = np.sqrt(np.sum((numbered_skeleton == label).astype(np.int8)))
-        if px_radius < min_px_radius:
-            numbered_skeleton[numbered_skeleton == label] = 0
+        mask = labeled_field == label
+        px_radius = np.sqrt(np.sum((mask).astype(np.int8)))
+        total_intensity = np.sum(value_channel[mask])
+        if px_radius < min_px_radius or total_intensity < min_intensity:
+            labeled_field[labeled_field == label] = 0
 
-    return numbered_skeleton
+    return labeled_field
 
 
 @generator_wrapper(in_dims=(2,))
 def qualifying_gfp(max_sum_projection):
     return max_sum_projection > np.median(max_sum_projection[max_sum_projection > 0])
+
+
+@generator_wrapper(in_dims=(2, 2), out_dims=(1, 2))
+def label_based_aq(labels, field_of_interest):
+    average_list = []
+    average_pad = np.zeros_like(labels).astype(np.float32)
+
+    for i in range(1, np.max(labels) + 1):
+
+        current_mask = labels == i
+        values_in_field = field_of_interest[current_mask]
+
+        if len(values_in_field) == 0:
+            continue
+
+        _average = np.average(values_in_field)
+        average_list.append(_average)
+        average_pad[current_mask] = _average
+
+    return np.array(average_list), average_pad
 
 
 @generator_wrapper(in_dims=(2, 2, 2), out_dims=(1, 2))
@@ -476,6 +564,9 @@ def binarize_2d(float_surface, cutoff_type='static', mcc_cutoff=None):
 
     elif cutoff_type == 'static':
         pass
+
+    elif cutoff_type == 'log-otsu':
+        mcc_cutoff = threshold_otsu(np.log(float_surface + np.min(float_surface[float_surface > 0])))
 
     else:
         raise PipeArgError('unknown cutoff type')

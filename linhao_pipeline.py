@@ -16,8 +16,10 @@ source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yea
                                matching_map=translator)
 
 # that architecture actually removes the need for the debug line
+# that can be incorporated into the traversal
 
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
+
 stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP')
 smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP')
 
@@ -29,9 +31,13 @@ projected_mCh = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
 
-segmented_GFP = cf.segment_out_cells(projected_mCh,
-                                     in_channel='projected_GFP',
-                                     out_channel='cell_labels')
+binarized_GFP = cf.int_robust_binarize(projected_mCh,
+                                       in_channel='projected_GFP',
+                                       out_channel='cell_tags')
+
+segmented_GFP = cf.improved_watershed(binarized_GFP,
+                                      in_channel='cell_tags',
+                                      out_channel='cell_labels')
 
 qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
                                    in_channel='projected_GFP',
@@ -43,21 +49,22 @@ average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
 
 GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
                                                    in_channel='average_GFP',
-                                                   out_channel=['upper_outliers', 'pred_gpf_av', 'gfp_std'])
+                                                   out_channel=['upper_outliers', 'pred_gpf_av',
+                                                                'gfp_std'])
 
 GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
-                                 in_channel=['cell_labels', 'upper_outliers'],
-                                 out_channel='GFP_outliers')
+                             in_channel=['cell_labels', 'upper_outliers'],
+                             out_channel='GFP_outliers')
 
 no_outliers = cf.clear_based_on_2d_mask(GFP_outliers,
                                         in_channel=['GFP', 'GFP_outliers'],
                                         out_channel='GFP')
 
-gfp_rendered = rdr.gfp_render(no_outliers,
-                              in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
+gfp_rendered = rdr.linhao_gfp_render(no_outliers,
+                                     in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
                                       'cell_labels', 'average_GFP_pad', 'average_GFP',
                                       'pred_gpf_av', 'gfp_std', 'upper_outliers', 'GFP_outliers'],
-                              out_channel='_')
+                                     out_channel='_')
 
 cleared = cf.clear_based_on_2d_mask(gfp_rendered,
                                     in_channel=['mCherry', 'GFP_outliers'],
@@ -71,9 +78,9 @@ per_cell_mito = cf.for_each(per_cell_split, cf.binarize_2d, 'per_cell', cutoff_t
                             in_channel='projected_mCh',
                             out_channel='mito_binary')
 
-segmented_mito = cf.for_each(per_cell_mito, cf.simple_segment, 'per_cell',
-                            in_channel='mito_binary',
-                            out_channel='mito_labels')
+segmented_mito = cf.for_each(per_cell_mito, cf.label_and_correct, 'per_cell',
+                             in_channel=['mito_binary', 'projected_mCh'],
+                             out_channel='mito_labels')
 
 skeletonized = cf.for_each(segmented_mito, cf.agreeing_skeletons, 'per_cell',
                            in_channel=['projected_mCh', 'mito_binary'],
@@ -96,11 +103,11 @@ rad_mask_tiled = cf.tile_from_mask(cell_class_tiled, 'per_cell', 'radius_mask')
 
 supp_mask_tiled = cf.tile_from_mask(rad_mask_tiled, 'per_cell', 'support_mask')
 
-final_namespace = rdr.mCh_render(supp_mask_tiled,
-                                 in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+final_namespace = rdr.linhao_mch_render(supp_mask_tiled,
+                                        in_channel=['name pattern', 'projected_mCh', 'mito_binary',
                                              'mCh_skeleton', 'classification_mask', 'final_classification',
                                              'cell_labels', 'radius_mask', 'support_mask'],
-                                 out_channel='_')
+                                        out_channel='_')
 
 
 for payload in final_namespace:

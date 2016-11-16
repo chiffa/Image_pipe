@@ -69,7 +69,7 @@ def stack_splitter(stack_group_generator):
     :return:
     """
     for name_pattern, stack in stack_group_generator:
-        channels = np.split(stack, stack.shape)
+        channels = np.split(stack, stack.shape[0])
         yield name_pattern, channels
 
 
@@ -92,5 +92,22 @@ def name_channels(stack_group_generator, channel_names):
 
 
 def Akshay_traverse(main_root):
-    pass
+    matched_images = {}
+
+    for current_location, sub_directories, files in os.walk(main_root):
+        if files:
+            for img in files:
+                if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
+                    prefix = cf.split_and_trim(current_location, main_root)
+
+                    img_codename = [img.split('.')[0]]
+                    name_pattern = ' - '.join(prefix + img_codename)
+                    matched_images[name_pattern] = os.path.join(current_location, img)
+
+    for name_pattern, image_location in matched_images.iteritems():
+        stack = cf.tiff_stack_2_np_arr(image_location)
+        channels = np.split(stack, stack.shape[0])
+        channels = [chan[0, :, :] for chan in channels]
+
+        yield name_pattern, channels
 
