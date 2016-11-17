@@ -103,4 +103,12 @@ of all the elements. to get the replicability within the pipeline.
 ## From the usage
 - we definitely need a pipeline assembly - it is too easy to forget the pipe redirections between the generators
 - it is a bit frustrating to be unable to add elementary modifications to channels when they are injected
-- 
+
+
+## reformulation
+A pretty clear way of dealing with it is to re-write to get rid of the wrappers
+and reduce it all to a main for loop with embedded for sub-loops.
+Nitty-gritty details:
+    - splitter needs to be a generator, returning values we want to use in the end
+    - secondary namespace
+    - point/tile/summarize

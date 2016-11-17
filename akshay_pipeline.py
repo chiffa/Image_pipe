@@ -16,10 +16,10 @@ smoothed_2 = cf.smooth_2d(stablilized_2, in_channel='p53', smoothing_px=.5)
 stablilized_3 = cf.gamma_stabilize(smoothed_2, in_channel='p21', min='5p', alpha_clean=2)
 smoothed_3 = cf.smooth_2d(stablilized_3, in_channel='p21', smoothing_px=.5)
 
-binarized_nuclei = cf.int_robust_binarize(smoothed_3,
-                                          in_channel='DAPI',
-                                          out_channel=['nuclei'],
-                                          _dilation=0)
+binarized_nuclei = cf.robust_binarize(smoothed_3,
+                                      in_channel='DAPI',
+                                      out_channel=['nuclei'],
+                                      _dilation=0)
 
 segmented_nuclei = cf.label_and_correct(binarized_nuclei,
                                         in_channel=['nuclei', 'DAPI'],
@@ -35,10 +35,12 @@ p53_o_n = cf.exclude_region(p53_aq,
                             out_channel='p53_o_n')
 
 # Current problem - what if the P53 level is so low, we can't segment anything?
-p53_o_n_segmented = cf.int_robust_binarize(p53_o_n,
-                                           in_channel='p53_o_n',
-                                           out_channel='p53_o_n_seg',
-                                           heterogeity_size=10, feature_size=70)
+# => in this case the answer is to use voronoi segmentation and use the levels reported from it
+# as p53 outside levels.
+p53_o_n_segmented = cf.robust_binarize(p53_o_n,
+                                       in_channel='p53_o_n',
+                                       out_channel='p53_o_n_seg',
+                                       heterogeity_size=10, feature_size=70)
 
 running_render = rdr.akshay_render(p53_o_n_segmented,
                                    in_channel=['name pattern', 'DAPI', 'p53', 'p21',

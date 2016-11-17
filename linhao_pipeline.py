@@ -31,9 +31,9 @@ projected_mCh = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
 
-binarized_GFP = cf.int_robust_binarize(projected_mCh,
-                                       in_channel='projected_GFP',
-                                       out_channel='cell_tags')
+binarized_GFP = cf.robust_binarize(projected_mCh,
+                                   in_channel='projected_GFP',
+                                   out_channel='cell_tags')
 
 segmented_GFP = cf.improved_watershed(binarized_GFP,
                                       in_channel='cell_tags',

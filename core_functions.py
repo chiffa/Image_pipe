@@ -377,14 +377,10 @@ def random_walker_binarize(base_image, _dilation=0):
     return binary_labels
 
 
+# To try: multilevel edge refinement.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
-def int_robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
+def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
     clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
-
-    # To try: add a grey area around the boundary between black and white
-
-    # TODO: local approach:
-    # smoothed area, grayed area, then otsu threshold with a typical separation distance
 
     selem = disk(heterogeity_size)
     smoothed = gaussian_filter(base_image, 3, mode='constant')
