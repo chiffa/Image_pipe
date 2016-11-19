@@ -2,6 +2,7 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt
 from core_functions import generator_wrapper
+from csv import writer as csv_writer
 
 
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2), out_dims=(None,))
@@ -106,8 +107,12 @@ def linhao_mch_render(name_pattern, proj_mCh, mitochondria, skeleton,
         plt.close()
 
 
-@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
-def akshay_render(name_pattern, DAPI, p53, p21, nuclei, p53_pad, p53_o_n, p53_o_n_seg):
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
+def akshay_render(name_pattern, DAPI, p53, p21,
+                  nuclei, vor_segment,
+                  extra_nuclear_p53, nuclear_p53_pad, extranuclear_p53_pad,
+                  extra_nuclear_p21, nuclear_p21_pad, extranuclear_p21_pad,
+                  save=False, directory_to_save_to='verification'):
 
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle(name_pattern)
@@ -127,38 +132,39 @@ def akshay_render(name_pattern, DAPI, p53, p21, nuclei, p53_pad, p53_o_n, p53_o_
     plt.imshow(p21, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
 
-    plt.subplot(244, sharex=main_ax, sharey=main_ax)
-    plt.title('p53 no nucleus')
-    plt.imshow(p53_o_n, cmap='hot', interpolation='nearest')
-    plt.contour(nuclei, [0.5], colors='k')
-
     plt.subplot(245, sharex=main_ax, sharey=main_ax)
     plt.title('nuclei')
-    plt.imshow(nuclei, interpolation='nearest', cmap='spectral')
+    plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
+    plt.contour(nuclei, [0.5], colors='k')
+    plt.contour(extra_nuclear_p53, [0.5], colors='r')
+    plt.contour(extra_nuclear_p21, [0.5], colors='g')
 
     plt.subplot(246, sharex=main_ax, sharey=main_ax)
-    plt.title('p53 in nucleus average intensity')
-    plt.imshow(p53_pad, interpolation='nearest', cmap='hot')
-    plt.contour(nuclei, [0.5], colors='w')
-    plt.contour(p53_o_n_seg, [0.5], colors='w')
+    plt.title('p53 outside nucleus average intensity')
+    p_53_summmary = np.zeros_like(nuclear_p53_pad)
+    p_53_summmary[extranuclear_p53_pad > 0] = extranuclear_p53_pad[extranuclear_p53_pad > 0]
+    p_53_summmary[nuclear_p53_pad > 0] = nuclear_p53_pad[nuclear_p53_pad > 0]
+    plt.imshow(p_53_summmary, interpolation='nearest', cmap='hot')
 
-    plt.subplot(248, sharex=main_ax, sharey=main_ax)
-    plt.title('p53 no nucleus segmented')
-    plt.imshow(p53_o_n_seg, interpolation='nearest', cmap='gray')
-    plt.contour(nuclei, [0.5], colors='k')
+    plt.subplot(247, sharex=main_ax, sharey=main_ax)
+    plt.title('p21 outside nucleus average intensity')
+    p_21_summmary = np.zeros_like(nuclear_p21_pad)
+    p_21_summmary[extranuclear_p21_pad > 0] = extranuclear_p21_pad[extranuclear_p21_pad > 0]
+    p_21_summmary[nuclear_p21_pad > 0] = nuclear_p21_pad[nuclear_p21_pad > 0]
+    plt.imshow(p_21_summmary, interpolation='nearest', cmap='hot')
 
-    # plt.subplot(245, sharex=main_ax, sharey=main_ax)
-    # plt.title('log-DAPI')
-    # plt.imshow(np.log(DAPI + np.min(DAPI[DAPI > 0])), cmap='hot', interpolation='nearest')
-    # plt.contour(nuclei, [0.5], colors='w')
+    if not save:
+        plt.show()
 
-    # plt.subplot(245)
-    # plt.hist(DAPI.flatten(), bins=100)
-    #
-    # plt.subplot(246)
-    # plt.hist(p53.flatten(), bins=100)
-    #
-    # plt.subplot(247)
-    # plt.hist(p21.flatten(), bins=100)
+    else:
+        name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
 
-    plt.show()
+
+@generator_wrapper(in_dims=(None, 1, 1, 1, 1), out_dims=(None,))
+def akshay_summarize(name_pattern, av_nuc_p53, av_en_p53, av_nuc_p21, av_en_p21, output):
+    with open(output, 'ab') as output_file:
+        writer = csv_writer(output_file)
+        for i, nuc_pac in enumerate(zip(av_nuc_p53, av_en_p53, av_nuc_p21, av_en_p21)):
+            writer.writerow([name_pattern, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])

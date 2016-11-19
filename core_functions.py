@@ -16,6 +16,7 @@ from skimage.feature import peak_local_max
 from skimage.morphology import disk
 from skimage.morphology import skeletonize, medial_axis
 from skimage.filters import threshold_otsu, rank, median
+from skimage.draw import line_aa
 from scipy.stats import t
 from scipy.stats import ttest_ind
 from itertools import combinations
@@ -23,6 +24,7 @@ from functools import wraps
 import types
 import collections
 import debug_renders as dbg
+
 
 debugger = CustomDebugger()
 
@@ -126,14 +128,15 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                 print f.__name__
                 print in_chan, in_dims
                 print len(in_chan), len(in_dims)
-                raise PipeArgError('More inbound channels are piped than function allows')
+                raise PipeArgError('%s inbound channels are piped, function allows %s' %
+                                   (len(in_chan), len(in_dims)))
 
             if len(out_chan) != len(out_dims):
                 print f.__name__
                 print out_chan, out_dims
                 print len(out_chan), len(out_dims)
-                raise PipeArgError('More outbound channels are piped than function allows')
-
+                raise PipeArgError('%s outbound channels are piped, function allows %s' %
+                                   (len(out_chan), len(out_dims)))
             # end in/out channel logic
 
             for name_space in iterator:
@@ -377,7 +380,7 @@ def random_walker_binarize(base_image, _dilation=0):
     return binary_labels
 
 
-# To try: multilevel edge refinement.
+# To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
     clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
@@ -402,6 +405,43 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
     #                           clustering_markers, binary_labels)
 
     return binary_labels
+
+
+@generator_wrapper(in_dims=(2,))
+def voronoi_segment_labels(binary_labels):
+
+    dist = ndi.morphology.distance_transform_edt(np.logical_not(binary_labels))
+    segmented_cells_labels = watershed(dist, binary_labels)
+    # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
+
+    return segmented_cells_labels
+
+
+@generator_wrapper(in_dims=(2, 2), out_dims=(2,))
+def filter_labels(labels, binary_mask, min_feature_size=10):
+    binary_mask = binary_mask.astype(np.bool)
+
+    # TODO: modify to exclude small labels; replace them instead by large labels overall.
+    # to consider: force nuclear adjacency rules?
+
+    filtered_labels = np.zeros_like(labels)
+    filtered_labels[binary_mask] = labels[binary_mask]
+
+    mask_items = np.unique(labels)
+    mask_items = mask_items[mask_items > 0].tolist()
+
+    for val in mask_items:
+        _mask = filtered_labels == val
+        if len(_mask):
+            px_radius = np.sqrt(np.sum((filtered_labels == val).astype(np.int)))
+        else:
+            px_radius = 0
+        if px_radius < min_feature_size:
+            filtered_labels[labels == val] = labels[labels == val]
+
+    # dbg.filter_labels_debug(labels, binary_mask, filtered_labels)
+
+    return filtered_labels
 
 
 @generator_wrapper(in_dims=(2, 2), out_dims=(2,))
@@ -440,14 +480,16 @@ def improved_watershed(binary_base):
 
 
 @generator_wrapper(in_dims=(2, 2,), out_dims=(2,))
-def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intensity=0):
+def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intensity=0, mean_diff=10):
     labeled_field, object_no = ndi.label(binary_channel, structure=np.ones((3, 3)))
+    background_mean = np.mean(value_channel[labeled_field == 0])
 
     for label in range(1, object_no+1):
         mask = labeled_field == label
         px_radius = np.sqrt(np.sum((mask).astype(np.int8)))
         total_intensity = np.sum(value_channel[mask])
-        if px_radius < min_px_radius or total_intensity < min_intensity:
+        label_mean = np.mean(value_channel[labeled_field == label])
+        if px_radius < min_px_radius or total_intensity < min_intensity or label_mean < mean_diff*background_mean:
             labeled_field[labeled_field == label] = 0
 
     return labeled_field

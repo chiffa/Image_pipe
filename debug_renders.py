@@ -41,3 +41,50 @@ def robust_binarize_debug(base, smooth, median, otsu, labels, binary):
     plt.imshow(binary, interpolation='nearest')
 
     plt.show()
+
+
+def voronoi_debug(base, points, labels, watershed):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('Voronoi debug')
+
+    main_ax = plt.subplot(221)
+    plt.title('base')
+    plt.imshow(base, interpolation='nearest')
+
+    plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    plt.title('points')
+    plt.imshow(points, interpolation='nearest', cmap='hot')
+
+    plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    plt.title('labels')
+    plt.imshow(labels, interpolation='nearest', cmap='hot')
+
+    plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    plt.title('watershed')
+    plt.imshow(watershed, interpolation='nearest', cmap=plt.cm.spectral, vmin=0)
+
+    plt.show()
+
+
+def filter_labels_debug(labels, binary, result):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('filter labels')
+
+    main_ax = plt.subplot(221)
+    plt.title('labels')
+    plt.imshow(labels, interpolation='nearest', cmap=plt.cm.spectral)
+
+    plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    plt.title('binary')
+    plt.imshow(binary, interpolation='nearest', cmap='gray')
+
+    plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    plt.title('result')
+    plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0),
+
+    # plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    # plt.title('watershed')
+    # plt.imshow(watershed, interpolation='nearest', cmap='hot')
+
+    plt.show()
+

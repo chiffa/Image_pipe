@@ -112,3 +112,4 @@ Nitty-gritty details:
     - splitter needs to be a generator, returning values we want to use in the end
     - secondary namespace
     - point/tile/summarize
+    

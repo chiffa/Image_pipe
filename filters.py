@@ -1,4 +1,3 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import core_functions as cf
 from collections import defaultdict
@@ -110,4 +109,3 @@ def Akshay_traverse(main_root):
         channels = [chan[0, :, :] for chan in channels]
 
         yield name_pattern, channels
-
