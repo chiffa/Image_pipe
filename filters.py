@@ -8,8 +8,8 @@ debugger = CustomDebugger()
 cf.debugger = debugger
 
 
-def traverse_and_match(main_root,
-                       matching_rule='c', matching_map=None):
+def Linhao_traverse(main_root,
+                    matching_rule='c', matching_map=None):
     """
     Traverses the main_root directory, looking for all the '.tif/.TIF' files, performs name matching
     then iterates through the resulting matched dictironary.
@@ -33,12 +33,13 @@ def traverse_and_match(main_root,
                     prefix = cf.split_and_trim(current_location, main_root)
 
                     img_codename = img.split(' ')[0].split('_')
+                    print prefix
+                    print img_codename
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     matched_images[name_pattern][color] = os.path.join(current_location, img)
 
     delset = []
-
     for name_pattern, (color_set) in matched_images.iteritems():
         # debugger.logger.debug(color_set)
         if any([color == '' for color in color_set]):
@@ -56,20 +57,7 @@ def traverse_and_match(main_root,
         for color in color_set:
             channels.append(cf.tiff_stack_2_np_arr(color))
 
-        yield name_pattern, channels
-
-
-def stack_splitter(stack_group_generator):
-    """
-    Used when the tiff stack encodes a different information from the z-stack. assumes a single
-    stack in the input generator
-
-    :param stack_group_generator:
-    :return:
-    """
-    for name_pattern, stack in stack_group_generator:
-        channels = np.split(stack, stack.shape[0])
-        yield name_pattern, channels
+        yield name_pattern, None, channels
 
 
 def name_channels(stack_group_generator, channel_names):
@@ -81,8 +69,9 @@ def name_channels(stack_group_generator, channel_names):
     :return:
     """
 
-    for name_pattern, channels in stack_group_generator:
-        group_dict = {'name pattern': name_pattern}
+    for name_pattern, group_ids, channels in stack_group_generator:
+        group_dict = {'name pattern': name_pattern,
+                      'group id': group_ids}
         group_dict['channel list'] = channel_names
         for chan_name, chan in zip(channel_names, channels):
             group_dict[chan_name] = chan
@@ -91,7 +80,7 @@ def name_channels(stack_group_generator, channel_names):
 
 
 def Akshay_traverse(main_root):
-    matched_images = {}
+    matched_images = []
 
     for current_location, sub_directories, files in os.walk(main_root):
         if files:
@@ -101,11 +90,13 @@ def Akshay_traverse(main_root):
 
                     img_codename = [img.split('.')[0]]
                     name_pattern = ' - '.join(prefix + img_codename)
-                    matched_images[name_pattern] = os.path.join(current_location, img)
+                    group_by = img_codename[0].split('rpe')[1].split('dapi')[0].strip()
+                    matched_images.append((name_pattern, group_by, os.path.join(current_location, img)))
 
-    for name_pattern, image_location in matched_images.iteritems():
+    for name_pattern, group_by, image_location in matched_images:
         stack = cf.tiff_stack_2_np_arr(image_location)
+        stack = np.rollaxis(stack[0, :, :, :], 2)  # on the data where channels have not been split into z stacks
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
 
-        yield name_pattern, channels
+        yield name_pattern, group_by, channels

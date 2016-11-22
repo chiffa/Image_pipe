@@ -11,6 +11,7 @@ from csv import writer
 from skimage.segmentation import random_walker
 from skimage.morphology import closing, dilation
 from scipy import ndimage as ndi
+from scipy.signal import medfilt2d
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from skimage.morphology import disk
@@ -168,7 +169,8 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                     if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
                         raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
                                            (chan, len(return_puck[i].shape), out_dims[i]))
-                    name_space[chan] = return_puck[i]
+                    if chan != '_':
+                        name_space[chan] = return_puck[i]
                 # end output prepare
 
                 yield name_space
@@ -383,26 +385,36 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
+    print np.percentile(base_image, 99), np.sum(base_image)
+    if np.percentile(base_image, 99) < 0.20:
+        if np.percentile(base_image, 99) > 0:
+            mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions
+        else:
+            mult = 1000. / np.sum(base_image)
+        base_image = base_image * mult
+        base_image[base_image > 1] = 1
     clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
 
     selem = disk(heterogeity_size)
-    smoothed = gaussian_filter(base_image, 3, mode='constant')
-    grayed_area = median(smoothed, selem)
+    smooth = gaussian_filter(base_image, heterogeity_size, mode='constant')
+    smooth_median = median(smooth, selem)
+    uniform_median = median(base_image, selem)
 
     selem2 = disk(feature_size)
-    local_otsu = rank.otsu(grayed_area, selem2)
+    local_otsu = rank.otsu(smooth_median, selem2)
+    uniform_median_otsu = rank.otsu(uniform_median, selem2)
 
-    clustering_markers[grayed_area < local_otsu * 0.1] = 1
-    clustering_markers[grayed_area > local_otsu * 1.1] = 2
+    clustering_markers[smooth_median < local_otsu * 0.9] = 1
+    clustering_markers[smooth_median > local_otsu * 1.1] = 2
 
-    binary_labels = random_walker(smoothed, clustering_markers, beta=10, mode='bf') - 1
+    binary_labels = random_walker(smooth_median, clustering_markers, beta=10, mode='bf') - 1
 
     if _dilation:
         selem = disk(_dilation)
         binary_labels = dilation(binary_labels, selem)
 
-    # dbg.robust_binarize_debug(base_image, smoothed, grayed_area, local_otsu,
-    #                           clustering_markers, binary_labels)
+    # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
+    #                           binary_labels, uniform_median, uniform_median_otsu)
 
     return binary_labels
 
@@ -457,6 +469,34 @@ def exclude_region(exclusion_mask, field, _dilation=5):
     excluded[np.logical_not(_exclusion_mask)] = field[np.logical_not(_exclusion_mask)]
 
     return excluded
+
+
+@generator_wrapper(in_dims=(2, 2))
+def in_contact(mask1, mask2, distance=10):
+
+    selem = disk(distance)
+
+    extended_msk1 = dilation(mask1, selem)
+    extended_msk2 = dilation(mask2, selem)
+
+    intersection = np.logical_and(extended_msk1, extended_msk2)
+    intersection = dilation(intersection, selem)
+
+    labeled_mask1, tot1 = ndi.label(mask1)
+    labeled_mask2, tot2 = ndi.label(mask2)
+
+    in_contact1 = np.zeros_like(mask1)
+    in_contact2 = np.zeros_like(mask2)
+
+    for label in range(1, tot1+1):
+        if np.any(intersection[labeled_mask1 == label]):
+            in_contact1[labeled_mask1 == label] = 1
+
+    for label in range(1, tot2+1):
+        if np.any(intersection[labeled_mask2 == label]):
+            in_contact2[labeled_mask2 == label] = 1
+
+    return in_contact1, in_contact2
 
 
 @generator_wrapper(in_dims=(2,))

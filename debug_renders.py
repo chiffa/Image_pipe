@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 
 
-def robust_binarize_debug(base, smooth, median, otsu, labels, binary):
+def robust_binarize_debug(base, smooth, median, otsu, labels, binary, u_median, u_otsu):
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle('Robust Binarize_debug')
 
@@ -26,10 +26,15 @@ def robust_binarize_debug(base, smooth, median, otsu, labels, binary):
     plt.contour(binary, [0.5], colors='k')
 
     plt.subplot(245, sharex=main_ax, sharey=main_ax)
-    plt.title('median - otsu')
-    plt.imshow(median-otsu, interpolation='nearest')
+    plt.title('otsu - median')
+    plt.imshow(otsu-median, interpolation='nearest', cmap='coolwarm')
+    plt.colorbar()
     plt.contour(binary, [0.5], colors='k')
 
+    plt.subplot(246, sharex=main_ax, sharey=main_ax)
+    plt.title('otsu - unsmoothed median')
+    plt.imshow(u_otsu - u_median, interpolation='nearest')
+    plt.contour(binary, [0.5], colors='k')
 
     plt.subplot(247, sharex=main_ax, sharey=main_ax)
     plt.title('labels')

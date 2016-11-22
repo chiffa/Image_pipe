@@ -12,8 +12,8 @@ translator = {'w1488': 0,
               'w2561': 1
               }
 
-source = uf.traverse_and_match("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis06152016",
-                               matching_map=translator)
+source = uf.Linhao_traverse("L:\\Users\\jerry\\Image\\ForAndrei\\Ry233282285",
+                            matching_map=translator)
 
 # that architecture actually removes the need for the debug line
 # that can be incorporated into the traversal
