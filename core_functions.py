@@ -385,7 +385,7 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
-    print np.percentile(base_image, 99), np.sum(base_image)
+    # print np.percentile(base_image, 99), np.sum(base_image)
     if np.percentile(base_image, 99) < 0.20:
         if np.percentile(base_image, 99) > 0:
             mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions

@@ -97,7 +97,7 @@ running_render = rdr.akshay_render(p21_en_eq,
                                                'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad',
                                                'extra_nuclear_p21', 'nuc_p21_pad', 'av_en_p21_pad'],
                                    out_channel='_',
-                                   save=False)
+                                   save=True)
 
 summary = rdr.akshay_summarize(running_render,
                                in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',
@@ -110,7 +110,6 @@ with open('analys_results.csv', 'wb') as output_file:
         writer.writerow(['file', 'group id', 'cell no', 'nuclear p53',
                          'cellular p53', 'nuclear p21', 'cellular p21'])
 
-for elt in summary:
-    print 'analyzed %s' % elt['name pattern']
+for i, elt in enumerate(summary):
+    print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
 
-# TODO: test multi-scale median as a way of detecting the DAPI nuclei as opposed to local OTSU
