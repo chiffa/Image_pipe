@@ -39,14 +39,23 @@ def Linhao_traverse(main_root,
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     matched_images[name_pattern][color] = os.path.join(current_location, img)
-                    tags_dict[name_pattern].append(prefix[-1])  # time in the times series
-                    _date = prefix[0][:7]
-                    tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
-                    tags_dict[name_pattern].append(prefix[1])  # strain name
-                    if len(prefix) > 3:
-                        tags_dict[name_pattern].append(prefix[2])
+                    time_stamp = prefix[-1]
+
+                    if time_stamp == 'HS':
+                        time = 0
+                    elif 'HS' in time_stamp:
+                        time = -30
                     else:
-                        tags_dict[name_pattern].append('')
+                        time = int(time_stamp[3:-3])
+                    tags_dict[name_pattern] = []
+                    tags_dict[name_pattern].append(time)  # time in the times series
+                    _date = prefix[0][:8]
+                    tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
+                    tags_dict[name_pattern].append(prefix[2])  # strain name
+                    # if len(prefix) > 3:
+                    #     tags_dict[name_pattern].append(prefix[2])
+                    # else:
+                    #     tags_dict[name_pattern].append('')
 
 
     delset = []

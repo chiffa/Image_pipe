@@ -30,12 +30,8 @@ stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP')
 smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP')
 
 stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
-smoothed_mCh = cf.smooth(stabilized_mCh,
-                         in_channel='mCherry',
-                         out_channel='smoothed_mCherry',
-                         smoothing_px=2)
 
-projected_GFP = cf.sum_projection(smoothed_mCh,
+projected_GFP = cf.sum_projection(stabilized_mCh,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
 
@@ -43,11 +39,8 @@ projected_mCh = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
 
-smoothed_projected_mCh = cf.max_projection(projected_mCh,
-                                           in_channel='smoothed_mCherry',
-                                           out_channel='s_p_mCherry')
 
-binarized_GFP = cf.robust_binarize(smoothed_projected_mCh,
+binarized_GFP = cf.robust_binarize(projected_mCh,
                                    in_channel='projected_mCh',
                                    out_channel='cell_tags')
 
@@ -76,23 +69,8 @@ GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
 
-# no_outliers = cf.clear_based_on_2d_mask(GFP_outliers,
-#                                         in_channel=['GFP', 'GFP_outliers'],
-#                                         out_channel='GFP')
 
-gfp_rendered = rdr.linhao_gfp_render(GFP_filtered,
-                                     in_channel=['name pattern', 'projected_GFP', 'qualifying_GFP',
-                                      'pre_cell_labels', 'average_GFP_pad', 'average_GFP',
-                                      'pred_gpf_av', 'gfp_std', 'non_outliers', 'cell_labels'],
-                                     out_channel='_',
-                                     save=True)
-
-# cleared = cf.clear_based_on_2d_mask(gfp_rendered,
-#                                     in_channel=['mCherry', 'GFP_outliers'],
-#                                     out_channel='mCherry')
-
-
-per_cell_split = cf.splitter(gfp_rendered, 'per_cell',
+per_cell_split = cf.splitter(GFP_filtered, 'per_cell',
                              sources=['mCherry', 'GFP',
                                       'projected_mCh', 'projected_GFP'],
                              mask='cell_labels')
@@ -144,7 +122,17 @@ gfp_mqvi_tiled = cf.paint_from_mask(supp_mask_tiled, 'per_cell', 'gfp_mqvi')
 
 mch_mqvi_tiled = cf.paint_from_mask(gfp_mqvi_tiled, 'per_cell', 'mch_mqvi')
 
-pre_render = rdr.linhao_mqvi_render(mch_mqvi_tiled,
+gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
+                                     in_channel=['name pattern',
+                                                 'projected_GFP', 'qualifying_GFP',
+                                                 'pre_cell_labels',
+                                                 'average_GFP_pad', 'average_GFP',
+                                                 'pred_gpf_av', 'gfp_std', 'non_outliers',
+                                                 'cell_labels', 'projected_mCh'],
+                                     out_channel='_',
+                                     save=True)
+
+pre_render = rdr.linhao_mqvi_render(gfp_rendered,
                                     in_channel=['name pattern', 'mito_binary', 'cell_labels',
                                                 'projected_GFP', 'projected_mCh',
                                                 'gfp_mqvi', 'mch_mqvi'],
@@ -162,8 +150,8 @@ final_namespace = rdr.linhao_summarize(final_namespace, output='llinhao_analys_r
 
 with open('llinhao_analys_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)
-        writer.writerow(['file', 'group id', 'cell no', 'nuclear p53',
-                         'cellular p53', 'nuclear p21', 'cellular p21'])
+        writer.writerow(['file', 'time in curve', 'date', 'cell type',
+                         'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
 
 prev_time = time()
 

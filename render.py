@@ -6,15 +6,12 @@ from csv import writer as csv_writer
 import scipy
 
 
-@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2), out_dims=(None,))
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2, 2), out_dims=(None,))
 def linhao_gfp_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp_pad, average_gfp_list,
-                      predicted_average, std_err, upper_outliers, gfp_outliers,
+                      predicted_average, std_err, upper_outliers, gfp_outliers, proj_mch,
                       save=False, directory_to_save_to='verification'):
 
     # To Consider: bind all the x/y axes together.
-
-
-
 
     plt.figure(figsize=(20, 15))
 
@@ -59,8 +56,9 @@ def linhao_gfp_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp
         x, y = scipy.ndimage.measurements.center_of_mass(mask)
         ax.text(y-8, x+8, '%s' % i, fontsize=10)
 
-    # plt.subplot(248)
-    # plt.imshow(self.qualifying_gfp_mask)
+    plt.subplot(248, sharex=main_ax, sharey=main_ax)
+    plt.imshow(proj_gfp, interpolation='nearest')
+    plt.contour(cell_labels > 0, [0.5], colors='w')
 
     if not save:
         plt.show()
@@ -246,11 +244,10 @@ def linhao_summarize(primary_namespace, output):
         namespace = primary_namespace['name pattern']
         tag_group = primary_namespace['group id']
         secondary_namespace = primary_namespace['per_cell']
+        pre_puck = [namespace] + tag_group
         for key, value in secondary_namespace.iteritems():
             if key != '_pad':
-                writer.writerow([namespace]+tag_group+[key,
-                                                       value['gfp_mqvi'],
-                                                       value['mch_mqvi'],
-                                                       value['final_classification']])
+                proper_puck = pre_puck+[key, value['gfp_mqvi'], value['mch_mqvi'], value['final_classification']]
+                writer.writerow(proper_puck)
 
     return primary_namespace
