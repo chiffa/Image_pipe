@@ -51,7 +51,7 @@ def Linhao_traverse(main_root,
                     tags_dict[name_pattern].append(time)  # time in the times series
                     _date = prefix[0][:8]
                     tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
-                    tags_dict[name_pattern].append(prefix[2])  # strain name
+                    tags_dict[name_pattern].append(prefix[-2])  # strain name
                     # if len(prefix) > 3:
                     #     tags_dict[name_pattern].append(prefix[2])
                     # else:
