@@ -1,5 +1,5 @@
 import debugger_skeleton
-import filters as uf
+import traversals as uf
 import core_functions as cf
 from matplotlib import pyplot as plt
 import render as rdr
@@ -103,9 +103,9 @@ summary = rdr.akshay_summarize(running_render,
                                in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',
                                            'nuc_p21', 'av_en_p21'],
                                out_channel='_',
-                               output='analys_results.csv')
+                               output='akshay_analysis_results.csv')
 
-with open('analys_results.csv', 'wb') as output_file:
+with open('akshay_analysis_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)
         writer.writerow(['file', 'group id', 'cell no', 'nuclear p53',
                          'cellular p53', 'nuclear p21', 'cellular p21'])

@@ -123,6 +123,8 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                     print 'Input %s will be overwritten by function %s' % (in_chan[0], f.__name__)
                     out_chan = in_chan
                 else:
+                    print f.__name__
+                    print in_chan, in_dims
                     raise PipeArgError('Please provide out_channel argument')
 
             if len(in_chan) != len(in_dims):
@@ -167,6 +169,8 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
                 for i, chan in enumerate(out_chan):
                     if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
+                        print f.__name__
+                        print chan
                         raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
                                            (chan, len(return_puck[i].shape), out_dims[i]))
                     if chan != '_':
@@ -223,7 +227,7 @@ def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
-        for _ in secondary_generator:  # forces secondary generator to evaluate
+        for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
         yield primary_namespace
 
@@ -537,7 +541,7 @@ def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intens
 
 @generator_wrapper(in_dims=(2,))
 def qualifying_gfp(max_sum_projection):
-    return max_sum_projection > np.median(max_sum_projection[max_sum_projection > 0])
+    return max_sum_projection > 0
 
 
 @generator_wrapper(in_dims=(2, 2), out_dims=(1, 2))
@@ -588,18 +592,21 @@ def detect_upper_outliers(cells_average_gfp_list):
     cells_average_gfp_list = sorted(cells_average_gfp_list)
     cell_no = range(0, len(cells_average_gfp_list))
     # Non-trivial logic selecting the regression basis
-    regression_base = min(len(cells_average_gfp_list) - 5, 10)
+    regression_base = min(len(cells_average_gfp_list) - 3, 10)
+
     slope, intercept, _, _, _ = stats.linregress(np.array(cell_no)[1:regression_base],
                                                  np.array(cells_average_gfp_list)[1:regression_base])
+
     std_err = (np.max(np.array(cells_average_gfp_list)[1:regression_base]) -
                np.min(np.array(cells_average_gfp_list)[1:regression_base])) / 2
     std_err *= 8
+
     predicted_average_gfp = intercept + slope * np.array(cell_no)
 
-    upper_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) <
+    non_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) >
                                                  np.array(cells_average_gfp_list)]]
 
-    return upper_outliers, predicted_average_gfp, std_err
+    return non_outliers, predicted_average_gfp, std_err
 
 
 @generator_wrapper(in_dims=(2, 1), out_dims=(2,))
@@ -611,6 +618,13 @@ def paint_mask(label_masks, labels_to_paint):
             mask_to_paint[label_masks == idx + 1] = 1  # indexing starts from 1, not 0 for the labels
 
     return mask_to_paint
+
+
+@generator_wrapper(in_dims=(2, 2), out_dims=(2,))
+def mask_filter_2d(base, _filter):
+    ret_val = np.zeros_like(base)
+    ret_val[_filter.astype(np.bool)] = base[_filter.astype(np.bool)]
+    return ret_val
 
 
 @generator_wrapper(in_dims=(3, 2), out_dims=(3,))
@@ -626,9 +640,22 @@ def binarize_3d(float_volume, mcc_cutoff):
 
 
 @generator_wrapper(in_dims=(3, 3), out_dims=(None,))
-def binary_inclusion_3d(float_volume, binary_volume):
+def volume_mqvi(float_volume, binary_volume):
     m_q_v_i = np.median(float_volume[binary_volume])
     return m_q_v_i
+
+
+@generator_wrapper(in_dims=(3, 3), out_dims=(None,))
+def volume_aqvi(float_volume, binary_volume):
+    a_q_v_i = np.mean(float_volume[binary_volume])
+    return a_q_v_i
+
+@generator_wrapper(in_dims=(3, 2), out_dims=(3,))
+def _3d_mask_from_2d_mask(shape_base, _2d_labels):
+    otsu = threshold_otsu(shape_base)
+    ret_val = shape_base > otsu
+    ret_val = ret_val.astype(np.bool)
+    return ret_val
 
 
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
@@ -704,7 +731,7 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
         px_radius = np.sqrt(np.sum((label_mask == label).astype(np.int)))
         support = np.sum((skeletons[label_mask == label] > 0).astype(np.int))
 
-        if px_radius < 5 or support < 20:
+        if px_radius < 5 or support < 10:
             classification = 1  # fragment of a broken mitochondria
         else:
             classification = -1  # mitochondria is intact

@@ -22,6 +22,7 @@ def Linhao_traverse(main_root,
     :return:
     """
     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
+    tags_dict = defaultdict(lambda: [])
 
     if matching_rule:
         assert(matching_map is not None)
@@ -38,6 +39,15 @@ def Linhao_traverse(main_root,
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     matched_images[name_pattern][color] = os.path.join(current_location, img)
+                    tags_dict[name_pattern].append(prefix[-1])  # time in the times series
+                    _date = prefix[0][:7]
+                    tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
+                    tags_dict[name_pattern].append(prefix[1])  # strain name
+                    if len(prefix) > 3:
+                        tags_dict[name_pattern].append(prefix[2])
+                    else:
+                        tags_dict[name_pattern].append('')
+
 
     delset = []
     for name_pattern, (color_set) in matched_images.iteritems():
@@ -57,7 +67,7 @@ def Linhao_traverse(main_root,
         for color in color_set:
             channels.append(cf.tiff_stack_2_np_arr(color))
 
-        yield name_pattern, None, channels
+        yield name_pattern, tags_dict[name_pattern], channels
 
 
 def name_channels(stack_group_generator, channel_names):
