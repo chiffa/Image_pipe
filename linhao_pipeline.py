@@ -132,21 +132,21 @@ gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
                                      out_channel='_',
                                      save=True)
 
-pre_render = rdr.linhao_mqvi_render(gfp_rendered,
+mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
                                     in_channel=['name pattern', 'mito_binary', 'cell_labels',
                                                 'projected_GFP', 'projected_mCh',
                                                 'gfp_mqvi', 'mch_mqvi'],
                                     out_channel='_',
                                     save=True)
 
-final_namespace = rdr.linhao_mch_render(pre_render,
+mch_render = rdr.linhao_mch_render(mqvi_render,
                                         in_channel=['name pattern', 'projected_mCh', 'mito_binary',
                                              'mCh_skeleton', 'classification_mask', 'final_classification',
                                              'cell_labels', 'radius_mask', 'support_mask'],
                                         out_channel='_',
                                         save=True)
 
-final_namespace = rdr.linhao_summarize(final_namespace, output='llinhao_analys_results.csv')
+final_namespace = rdr.linhao_summarize(mch_render, output='llinhao_analys_results.csv')
 
 with open('llinhao_analys_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)

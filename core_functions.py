@@ -157,32 +157,33 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
                 local_args = tuple(args_puck) + args
                 # end args prepare
-
                 return_puck = f(*local_args, **kwargs)
 
                 if return_puck is None and out_chan[0] == '_':
+                    yield name_space  # unlike return, yield is probably non-blocking....
+
+                else:
+                    # start output prepare
+                    if not isinstance(return_puck, tuple):
+                        return_puck = (return_puck, )
+
+                    for i, chan in enumerate(out_chan):
+                        if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
+                            print f.__name__
+                            print chan
+                            raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
+                                               (chan, len(return_puck[i].shape), out_dims[i]))
+                        if chan != '_':
+                            name_space[chan] = return_puck[i]
+                    # end output prepare
+
                     yield name_space
-
-                # start output prepare
-                if not isinstance(return_puck, tuple):
-                    return_puck = (return_puck, )
-
-                for i, chan in enumerate(out_chan):
-                    if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
-                        print f.__name__
-                        print chan
-                        raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
-                                           (chan, len(return_puck[i].shape), out_dims[i]))
-                    if chan != '_':
-                        name_space[chan] = return_puck[i]
-                # end output prepare
-
-                yield name_space
 
         else:
             for name_space in iterator:
                 local_args = (name_space,) + args
-                yield f(*local_args, **kwargs)
+                name_space = f(*local_args, **kwargs)
+                yield name_space
 
     return inner_wrapper
 
@@ -270,16 +271,6 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
 
         primary_namespace[out_channel] = accumulator
         yield primary_namespace
-
-
-def summarize(outer_generator, based_on, in_anchor, out_channel=None):
-
-    if out_channel is None:
-        out_channel = in_anchor
-
-    # summarizes the inner generator based_on based on the bound name.
-    # actually, should be a function wrapper
-    pass
 
 
 def tiff_stack_2_np_arr(tiff_location):

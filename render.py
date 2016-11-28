@@ -237,7 +237,7 @@ def akshay_summarize(name_pattern, group_by, av_nuc_p53, av_en_p53, av_nuc_p21, 
             writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
 
 
-@ generator_wrapper
+@generator_wrapper
 def linhao_summarize(primary_namespace, output):
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
