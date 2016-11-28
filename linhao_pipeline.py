@@ -1,4 +1,3 @@
-import debugger_skeleton
 import traversals as uf
 import core_functions as cf
 from matplotlib import pyplot as plt
@@ -146,22 +145,22 @@ mch_render = rdr.linhao_mch_render(mqvi_render,
                                         out_channel='_',
                                         save=True)
 
-per_cell_render = rdr.linhao_summarize(mch_render, output='llinhao_analys_results.csv')
+per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
 
-cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='llinhao_analys_results.csv')
+cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
 
-with open('llinhao_analys_results.csv', 'wb') as output_file:
+with open('linhao_analys_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)
         writer.writerow(['file', 'time in curve', 'date', 'cell type',
                          'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
 
 
-with open('llinhao_raw counts.csv', 'wb') as output_file:
+with open('linhao_raw counts.csv', 'wb') as output_file:
         writer = csv_writer(output_file)
-        writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected, cells analyzed'])
+        writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected', 'cells analyzed'])
 
 prev_time = time()
 
 for primary_namespace in cell_count:
-    print '%s - analyzed %s in %s' % (strftime('%X %x'), primary_namespace['name pattern'], time()-prev_time)
+    print '%s - analyzed %s in %s' % (strftime('%X %x'), primary_namespace['name pattern'], time() - prev_time)
     prev_time = time()

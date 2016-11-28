@@ -1,4 +1,3 @@
-import debugger_skeleton
 import traversals as uf
 import core_functions as cf
 from matplotlib import pyplot as plt

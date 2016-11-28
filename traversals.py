@@ -2,11 +2,6 @@ import numpy as np
 import core_functions as cf
 from collections import defaultdict
 import os
-from debugger import CustomDebugger
-
-debugger = CustomDebugger()
-cf.debugger = debugger
-
 
 def Linhao_traverse(main_root,
                     matching_rule='c', matching_map=None):

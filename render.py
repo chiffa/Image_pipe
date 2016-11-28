@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from matplotlib import pyplot as plt
-from core_functions import generator_wrapper
+from core_functions import generator_wrapper, safe_dir_create
 from csv import writer as csv_writer
 import scipy
 
@@ -259,8 +259,11 @@ def linhao_secondary_summarize(primary_namespace, output):
         writer = csv_writer(output_file)
         namespace = primary_namespace['name pattern']
         tag_group = primary_namespace['group id']
-        total_cells = np.unique(primary_namespace['pre_cell_labels']) - 1
-        analyzed_cells = np.unique(primary_namespace['cell_labels']) - 1
+        total_cells = len(np.unique(primary_namespace['pre_cell_labels'])) - 1
+        analyzed_cells = len(np.unique(primary_namespace['cell_labels'])) - 1
         writer.writerow([namespace] + tag_group + [total_cells, analyzed_cells])
 
     return primary_namespace
+
+
+safe_dir_create('verification')

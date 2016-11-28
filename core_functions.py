@@ -1,7 +1,6 @@
 import numpy as np
 import os
 from PIL import Image
-from debugger import CustomDebugger
 import traceback
 from matplotlib import pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
@@ -27,12 +26,14 @@ import collections
 import debug_renders as dbg
 
 
-debugger = CustomDebugger()
-
-
 dtype2bits = {'uint8': 8,
               'uint16': 16,
               'uint32': 32}
+
+
+def safe_dir_create(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
 
 
 class PipeArgError(ValueError):
