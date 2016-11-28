@@ -34,8 +34,6 @@ def Linhao_traverse(main_root,
                     prefix = cf.split_and_trim(current_location, main_root)
 
                     img_codename = img.split(' ')[0].split('_')
-                    print prefix
-                    print img_codename
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     matched_images[name_pattern][color] = os.path.join(current_location, img)

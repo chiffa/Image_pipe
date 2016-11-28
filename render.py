@@ -251,3 +251,16 @@ def linhao_summarize(primary_namespace, output):
                 writer.writerow(proper_puck)
 
     return primary_namespace
+
+
+@generator_wrapper
+def linhao_secondary_summarize(primary_namespace, output):
+    with open(output, 'ab') as output_file:
+        writer = csv_writer(output_file)
+        namespace = primary_namespace['name pattern']
+        tag_group = primary_namespace['group id']
+        total_cells = np.unique(primary_namespace['pre_cell_labels']) - 1
+        analyzed_cells = np.unique(primary_namespace['cell_labels']) - 1
+        writer.writerow([namespace] + tag_group + [total_cells, analyzed_cells])
+
+    return primary_namespace
