@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 def robust_binarize_debug(base, smooth, median, otsu, labels, binary, u_median, u_otsu):
@@ -109,4 +110,42 @@ def weight_sum_zero_debug(label_mask, img_codename):
     plt.show()
 
 
+def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mask, support_mask, mito_classes, final_classes, cell_labels, name_pattern):
 
+    cell_binary = cell_labels > 0
+    plt.figure(figsize=(20.0, 15.0))
+
+    plt.suptitle(name_pattern)
+
+    plt.subplot(241)
+    plt.imshow(proj_mCh, interpolation='nearest')
+    plt.contour(cell_binary, [0.5], colors='k')
+
+    plt.subplot(242)
+    plt.imshow(np.log(proj_mCh + np.min(proj_mCh[proj_mCh > 0])), cmap='hot', interpolation='nearest')
+    plt.contour(cell_binary, [0.5], colors='w')
+
+    plt.subplot(243)
+    plt.imshow(mitochondria, interpolation='nearest', cmap='gray')
+
+    plt.subplot(244)
+    plt.imshow(skeleton, interpolation='nearest', cmap=plt.cm.spectral)
+    plt.contour(mitochondria, [0.5], colors='w')
+
+    plt.subplot(245)
+    plt.imshow(radius_mask, cmap='hot', interpolation='nearest')
+    plt.contour(cell_binary, [0.5], colors='w')
+
+    plt.subplot(246)
+    plt.imshow(support_mask, cmap='hot', interpolation='nearest')
+    plt.contour(cell_binary, [0.5], colors='w')
+
+    plt.subplot(247)
+    plt.imshow(mito_classes, interpolation='nearest', cmap='coolwarm')
+    plt.contour(cell_binary, [0.5], colors='k')
+
+    plt.subplot(248)
+    plt.imshow(final_classes, interpolation='nearest', cmap='coolwarm')
+    plt.contour(cell_binary, [0.5], colors='k')
+
+    plt.show()

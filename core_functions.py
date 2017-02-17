@@ -726,7 +726,6 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     #
 
     dbg.weight_sum_zero_debug(label_mask, skeletons)
-
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 
