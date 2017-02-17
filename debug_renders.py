@@ -93,3 +93,20 @@ def filter_labels_debug(labels, binary, result):
 
     plt.show()
 
+
+def weight_sum_zero_debug(label_mask, img_codename):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('weight sum zero debugger')
+
+    main_ax = plt.subplot(121)
+    plt.title('label_mask')
+    plt.imshow(label_mask, interpolation='nearest', cmap=plt.cm.spectral)
+
+    plt.subplot(122, sharex=main_ax, sharey=main_ax)
+    plt.title('image code')
+    plt.imshow(img_codename, interpolation='nearest', cmap='gray')
+
+    plt.show()
+
+
+

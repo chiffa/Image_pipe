@@ -182,6 +182,11 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
         else:
             for name_space in iterator:
+
+                #my addition
+                print "name space", name_space
+
+
                 local_args = (name_space,) + args
                 name_space = f(*local_args, **kwargs)
                 yield name_space
@@ -228,6 +233,8 @@ def splitter(outer_generator, to, sources, mask):
 def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
+
+
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
         for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
@@ -266,8 +273,8 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
         accumulator = np.zeros_like(mask)
 
         for i, unique_value in enumerate(mask_values):
-            if i == 0:
-                accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
+
+            accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
 
         primary_namespace[out_channel] = accumulator
@@ -710,6 +717,16 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     # are too small => we will need a filter on the label
 
     # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
+
+    # if label_mask == 0:
+    #     pass
+    #
+    #
+    #
+    #
+
+    dbg.weight_sum_zero_debug(label_mask, skeletons)
+
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 
@@ -736,8 +753,15 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
         weights.append(px_radius)
 
     classification_roll = np.array(classification_roll)
+    print "classification mask", classification_mask
+    print "classification roll", classification_roll
     weights = np.array(weights)
+
+    print type(classification_roll)
+    print classification_roll
 
     final_classification = np.average(classification_roll, weights=weights)
 
+
     return final_classification, classification_mask, radius_mask, support_mask
+

@@ -17,7 +17,7 @@ translator = {'w1488': 0,
 # source = uf.Linhao_traverse("L:\\Users\\jerry\\Image\\ForAndrei\\Ry233282285",
 #                             matching_map=translator)
 
-source = uf.Linhao_traverse("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis",
+source = uf.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/SSAmutant/",
                             matching_map=translator)
 
 # that architecture actually removes the need for the debug line
@@ -100,6 +100,8 @@ skeletonized = cf.for_each(MCH_AEQVI, cf.agreeing_skeletons, 'per_cell',
                            in_channel=['projected_mCh', 'mito_binary'],
                            out_channel='mCh_skeleton')
 
+
+
 classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
                          in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
@@ -162,5 +164,12 @@ with open('linhao_raw counts.csv', 'wb') as output_file:
 prev_time = time()
 
 for primary_namespace in cell_count:
+
+    #my addition
+    print
+    print '****************************************************'
+    print "primary namespace", primary_namespace
+
+
     print '%s - analyzed %s in %s' % (strftime('%X %x'), primary_namespace['name pattern'], time() - prev_time)
     prev_time = time()
