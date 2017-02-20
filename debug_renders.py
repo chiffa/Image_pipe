@@ -109,6 +109,32 @@ def weight_sum_zero_debug(label_mask, img_codename):
 
     plt.show()
 
+def skeleton_debug(label_mask, skeleton, float_surface):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('skeleton debugger')
+
+    main_ax = plt.subplot(221)
+    plt.title('label_mask')
+    plt.imshow(label_mask, interpolation='nearest', cmap=plt.cm.spectral)
+
+    plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    plt.title('skeleton')
+    plt.imshow(skeleton, interpolation='nearest', cmap='gray')
+
+    plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    plt.title('float surface')
+    plt.imshow(float_surface, interpolation='nearest', cmap='gray')
+
+    plt.show()
+
+def max_projection_debug(current_image):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('current image')
+    main_ax = plt.subplot(121)
+    plt.title('current')
+    plt.imshow(current_image, interpolation='nearest', cmap=plt.cm.spectral)
+    plt.show()
+
 
 def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mask, support_mask, mito_classes, final_classes, cell_labels, name_pattern):
 

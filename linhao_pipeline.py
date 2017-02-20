@@ -103,7 +103,7 @@ classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondri
                          in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])
-# PROBLEM occurs here, can't seem to obtain classified
+# PROBLEM occurs here, can't seem to obtain classified, stops after for loop with "pass" after calling embedded transformer
 
 mito_tiled = cf.tile_from_mask(classified, 'per_cell', 'mito_binary')
 
@@ -162,12 +162,5 @@ with open('linhao_raw counts.csv', 'wb') as output_file:
 prev_time = time()
 
 for primary_namespace in cell_count:
-
-    #my addition
-    print
-    print '****************************************************'
-    print "primary namespace", primary_namespace
-
-
     print '%s - analyzed %s in %s' % (strftime('%X %x'), primary_namespace['name pattern'], time() - prev_time)
     prev_time = time()

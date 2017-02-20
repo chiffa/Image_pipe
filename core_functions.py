@@ -159,6 +159,7 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                 local_args = tuple(args_puck) + args
                 # end args prepare
                 return_puck = f(*local_args, **kwargs)
+
                 if return_puck is None and out_chan[0] == '_':
                     yield name_space  # unlike return, yield is probably non-blocking....
 
@@ -220,8 +221,8 @@ def splitter(outer_generator, to, sources, mask):
                     raise PipeArgError('masking impossible: dims not match, base channel %s is of dim %s' %
                                        (chan, len(primary_namespace[chan].shape)))
 
+                print "base chan", base_chan.shape
                 secondary_namespace[chan] = base_chan
-        print "primary namespace", type(primary_namespace), len(primary_namespace)
         yield primary_namespace
 
 
@@ -230,18 +231,16 @@ def for_each(outer_generator, embedded_transformer, inside, **kwargs):
     for primary_namespace in outer_generator:
         print
         print
-        print "starting for each"
-
+        print "starting for each function"
 
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
-        print "made it this far"
         for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
         print "made it after for loop"
         print "primary namespace-for each", len(primary_namespace)
         print type(embedded_transformer)
         print type(inside)
-        # ADD DEBUG PLOT HERE, problem is with 7th call of this function which is
+        # ADD DEBUG PLOT HERE, problem is with 7th call of this function to obtain "classified"
         yield primary_namespace
 
 
@@ -283,7 +282,6 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
 
         primary_namespace[out_channel] = accumulator
-        print "primary namespace-tile from mask", len(primary_namespace)
         yield primary_namespace
 
 
@@ -341,7 +339,10 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
         raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
-
+    dbg.max_projection_debug(np.max(current_image, axis=0))
+    print
+    print "gamma stabilize"
+    print current_image.shape
     return stabilized
 
 
@@ -351,7 +352,6 @@ def smooth(current_image, smoothing_px=1.5):
         current_image[i, :, :] = gaussian_filter(current_image[i, :, :],
                                                  smoothing_px, mode='constant')
         current_image[current_image < 5*np.mean(current_image)] = 0
-
     return current_image
 
 
@@ -359,17 +359,22 @@ def smooth(current_image, smoothing_px=1.5):
 def smooth_2d(current_image, smoothing_px=1.5):
     current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
     current_image[current_image < 5*np.mean(current_image)] = 0
-
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return current_image
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return np.sum(current_image, axis=0)
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def max_projection(current_image):
+    print "type-current image", type(current_image)
+    print current_image
+    print current_image.shape
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return np.max(current_image, axis=0)
 
 
@@ -722,7 +727,11 @@ def agreeing_skeletons(float_surface, mito_labels):
 
     skeletons = np.zeros_like(medial_skeleton)
     skeletons[topological_skeleton] = skeleton_convolve[topological_skeleton]
-
+    print type(medial_skeleton)
+    print type(active_threshold)
+    print "medial", medial_skeleton
+    print "active threshold", active_threshold
+    dbg.skeleton_debug(float_surface, mito_labels, skeletons)
     return skeletons
 
 
@@ -770,33 +779,25 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
         weights.append(px_radius)
 
     classification_roll = np.array(classification_roll)
-    # the following is the original that was under the function "classify_fragmentation_for_mitochondria"
-    # print "classification mask", classification_mask
-    # print "classification roll", classification_roll
-    # weights = np.array(weights)
-    #
-    # print type(classification_roll)
-    # print classification_roll
-    #
-    # final_classification = np.average(classification_roll, weights=weights)
-    #
-    #
-    # return final_classification, classification_mask, radius_mask, support_mask
+    final_classification = np.average(classification_roll, weights=weights)
 
 
-def check_weights_nonzero(classification_roll, classification_mask, weights, radius_mask, support_mask):
-
-    print type(classification_roll)
-    print type(classification_mask)
-    print type(weights)
-    print type(radius_mask)
-    print type(support_mask)
-    if sum(weights) != 0:
-        final_classification = np.average(classification_roll, weights=weights)
-        return final_classification, classification_mask, radius_mask, support_mask
-    else:
-        print "weights sum to zero"
-        return None, None, None, None
+    return final_classification, classification_mask, radius_mask, support_mask
+# the following is my addition but I think it would be better to add a filter earlier in the function, this may be called too late in the pipeline
+# to save it from crashing
+# def check_weights_nonzero(classification_roll, classification_mask, weights, radius_mask, support_mask):
+#
+#     print type(classification_roll)
+#     print type(classification_mask)
+#     print type(weights)
+#     print type(radius_mask)
+#     print type(support_mask)
+#     if sum(weights) != 0:
+#         final_classification = np.average(classification_roll, weights=weights)
+#         return final_classification, classification_mask, radius_mask, support_mask
+#     else:
+#         print "weights sum to zero"
+#         return None, None, None, None
 
 
 

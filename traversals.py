@@ -39,6 +39,7 @@ def Linhao_traverse(main_root,
 
                     # my changes
                     if img_codename[-2] == '4' and prefix[0] == '07072016ssa1' and prefix[1] == 'Mutant' and prefix[2] == 'REC30MIN':
+                    # if img_codename:
                         # problem_images.append((prefix))
                         print
                         print "code", img_codename
