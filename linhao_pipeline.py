@@ -63,7 +63,6 @@ GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
 GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
                              in_channel=['pre_cell_labels', 'non_outliers'],
                              out_channel='kept_cells')
-
 GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
@@ -100,12 +99,11 @@ skeletonized = cf.for_each(MCH_AEQVI, cf.agreeing_skeletons, 'per_cell',
                            in_channel=['projected_mCh', 'mito_binary'],
                            out_channel='mCh_skeleton')
 
-
-
 classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
                          in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])
+# PROBLEM occurs here, can't seem to obtain classified
 
 mito_tiled = cf.tile_from_mask(classified, 'per_cell', 'mito_binary')
 

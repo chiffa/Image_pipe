@@ -159,7 +159,6 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                 local_args = tuple(args_puck) + args
                 # end args prepare
                 return_puck = f(*local_args, **kwargs)
-
                 if return_puck is None and out_chan[0] == '_':
                     yield name_space  # unlike return, yield is probably non-blocking....
 
@@ -182,10 +181,6 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
         else:
             for name_space in iterator:
-
-                #my addition
-                print "name space", name_space
-
 
                 local_args = (name_space,) + args
                 name_space = f(*local_args, **kwargs)
@@ -226,18 +221,27 @@ def splitter(outer_generator, to, sources, mask):
                                        (chan, len(primary_namespace[chan].shape)))
 
                 secondary_namespace[chan] = base_chan
-
+        print "primary namespace", type(primary_namespace), len(primary_namespace)
         yield primary_namespace
 
 
 def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
+        print
+        print
+        print "starting for each"
 
 
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
+        print "made it this far"
         for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
+        print "made it after for loop"
+        print "primary namespace-for each", len(primary_namespace)
+        print type(embedded_transformer)
+        print type(inside)
+        # ADD DEBUG PLOT HERE, problem is with 7th call of this function which is
         yield primary_namespace
 
 
@@ -267,6 +271,7 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
         out_channel = in_anchor
 
     for primary_namespace in outer_generator:
+
         secondary_namespace = primary_namespace[based_on]
         mask = secondary_namespace['_pad'][1]
         mask_values = secondary_namespace['_pad'][0]
@@ -278,6 +283,7 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
 
         primary_namespace[out_channel] = accumulator
+        print "primary namespace-tile from mask", len(primary_namespace)
         yield primary_namespace
 
 
@@ -604,12 +610,21 @@ def detect_upper_outliers(cells_average_gfp_list):
 
     non_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) >
                                                  np.array(cells_average_gfp_list)]]
+    print "avergae gfp", predicted_average_gfp
+    print "sum of gfp", sum(predicted_average_gfp) #sum is .1239 so OK
+
 
     return non_outliers, predicted_average_gfp, std_err
 
 
 @generator_wrapper(in_dims=(2, 1), out_dims=(2,))
 def paint_mask(label_masks, labels_to_paint):
+
+    #label mask is GFP upper outlier cells
+    print type(label_masks)
+    print sum(sum(label_masks))
+    # sum is 1,208,400
+
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
     if labels_to_paint.tolist() != np.array([]):
@@ -623,6 +638,9 @@ def paint_mask(label_masks, labels_to_paint):
 def mask_filter_2d(base, _filter):
     ret_val = np.zeros_like(base)
     ret_val[_filter.astype(np.bool)] = base[_filter.astype(np.bool)]
+    print "return value", ret_val
+    print sum(sum(ret_val)) #same sum as label masks
+
     return ret_val
 
 
@@ -752,15 +770,35 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
         weights.append(px_radius)
 
     classification_roll = np.array(classification_roll)
-    print "classification mask", classification_mask
-    print "classification roll", classification_roll
-    weights = np.array(weights)
+    # the following is the original that was under the function "classify_fragmentation_for_mitochondria"
+    # print "classification mask", classification_mask
+    # print "classification roll", classification_roll
+    # weights = np.array(weights)
+    #
+    # print type(classification_roll)
+    # print classification_roll
+    #
+    # final_classification = np.average(classification_roll, weights=weights)
+    #
+    #
+    # return final_classification, classification_mask, radius_mask, support_mask
+
+
+def check_weights_nonzero(classification_roll, classification_mask, weights, radius_mask, support_mask):
 
     print type(classification_roll)
-    print classification_roll
+    print type(classification_mask)
+    print type(weights)
+    print type(radius_mask)
+    print type(support_mask)
+    if sum(weights) != 0:
+        final_classification = np.average(classification_roll, weights=weights)
+        return final_classification, classification_mask, radius_mask, support_mask
+    else:
+        print "weights sum to zero"
+        return None, None, None, None
 
-    final_classification = np.average(classification_roll, weights=weights)
 
 
-    return final_classification, classification_mask, radius_mask, support_mask
+
 
