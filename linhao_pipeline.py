@@ -98,6 +98,7 @@ MCH_AEQVI = cf.for_each(GFP_AEQVI, cf.volume_aqvi, 'per_cell',
 skeletonized = cf.for_each(MCH_AEQVI, cf.agreeing_skeletons, 'per_cell',
                            in_channel=['projected_mCh', 'mito_binary'],
                            out_channel='mCh_skeleton')
+print "skeletonized", skeletonized
 
 classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
                          in_channel=['mito_labels', 'mCh_skeleton'],

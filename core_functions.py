@@ -221,7 +221,6 @@ def splitter(outer_generator, to, sources, mask):
                     raise PipeArgError('masking impossible: dims not match, base channel %s is of dim %s' %
                                        (chan, len(primary_namespace[chan].shape)))
 
-                print "base chan", base_chan.shape
                 secondary_namespace[chan] = base_chan
         yield primary_namespace
 
@@ -240,7 +239,6 @@ def for_each(outer_generator, embedded_transformer, inside, **kwargs):
         print "primary namespace-for each", len(primary_namespace)
         print type(embedded_transformer)
         print type(inside)
-        # ADD DEBUG PLOT HERE, problem is with 7th call of this function to obtain "classified"
         yield primary_namespace
 
 
@@ -374,7 +372,10 @@ def max_projection(current_image):
     print "type-current image", type(current_image)
     print current_image
     print current_image.shape
+    print "max", np.max(current_image, axis=0)
+    print  '****************************************'
     dbg.max_projection_debug(np.max(current_image, axis=0))
+
     return np.max(current_image, axis=0)
 
 
@@ -429,7 +430,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
     #                           binary_labels, uniform_median, uniform_median_otsu)
-
+    dbg.robust_binarize_debug(base_image, binary_labels)
     return binary_labels
 
 
@@ -516,7 +517,8 @@ def in_contact(mask1, mask2, distance=10):
 @generator_wrapper(in_dims=(2,))
 def improved_watershed(binary_base):
     sel_elem = disk(2)
-    labels = closing(binary_base, sel_elem)
+    # changed variable name for "label"
+    post_closing_labels = closing(binary_base, sel_elem)
 
     distance = ndi.distance_transform_edt(labels)
     local_maxi = peak_local_max(distance,
@@ -530,6 +532,27 @@ def improved_watershed(binary_base):
     expanded_maxi_markers = ndi.label(local_maxi, structure=np.ones((3, 3)))[0]
     segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=labels)
 
+
+    print "labels array"
+    print labels
+    print
+    # for i in np.nditer(labels):
+    #     print i
+
+    for i in labels:
+        count = 0
+        for j in i:
+            if j == 1:
+                count+=1
+            print i.shape
+        print i.shape
+            # average = count/(i.shape[0]*i.shape[1])
+
+        print
+    print
+    print
+
+    dbg.improved_watershed_debug(segmented_cells_labels)
     return segmented_cells_labels
 
 
@@ -551,6 +574,7 @@ def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intens
 
 @generator_wrapper(in_dims=(2,))
 def qualifying_gfp(max_sum_projection):
+    print "max_sum_projection", max_projection > 0
     return max_sum_projection > 0
 
 
@@ -615,10 +639,6 @@ def detect_upper_outliers(cells_average_gfp_list):
 
     non_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) >
                                                  np.array(cells_average_gfp_list)]]
-    print "avergae gfp", predicted_average_gfp
-    print "sum of gfp", sum(predicted_average_gfp) #sum is .1239 so OK
-
-
     return non_outliers, predicted_average_gfp, std_err
 
 
@@ -635,7 +655,6 @@ def paint_mask(label_masks, labels_to_paint):
     if labels_to_paint.tolist() != np.array([]):
         for idx in labels_to_paint.tolist():
             mask_to_paint[label_masks == idx + 1] = 1  # indexing starts from 1, not 0 for the labels
-
     return mask_to_paint
 
 
@@ -643,7 +662,6 @@ def paint_mask(label_masks, labels_to_paint):
 def mask_filter_2d(base, _filter):
     ret_val = np.zeros_like(base)
     ret_val[_filter.astype(np.bool)] = base[_filter.astype(np.bool)]
-    print "return value", ret_val
     print sum(sum(ret_val)) #same sum as label masks
 
     return ret_val
