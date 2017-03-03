@@ -44,7 +44,7 @@ binarized_GFP = cf.robust_binarize(projected_mCh,
                                    out_channel='cell_tags')
 
 segmented_GFP = cf.improved_watershed(binarized_GFP,
-                                      in_channel='cell_tags',
+                                      in_channel=['cell_tags', 'projected_mCh'],
                                       out_channel='pre_cell_labels')
 
 qualifying_GFP = cf.qualifying_gfp(segmented_GFP,

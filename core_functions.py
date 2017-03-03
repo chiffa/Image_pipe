@@ -337,7 +337,7 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
         raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
-    dbg.max_projection_debug(np.max(current_image, axis=0))
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     print
     print "gamma stabilize"
     print current_image.shape
@@ -357,13 +357,13 @@ def smooth(current_image, smoothing_px=1.5):
 def smooth_2d(current_image, smoothing_px=1.5):
     current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
     current_image[current_image < 5*np.mean(current_image)] = 0
-    dbg.max_projection_debug(np.max(current_image, axis=0))
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return current_image
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
-    dbg.max_projection_debug(np.max(current_image, axis=0))
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return np.sum(current_image, axis=0)
 
 
@@ -374,7 +374,7 @@ def max_projection(current_image):
     print current_image.shape
     print "max", np.max(current_image, axis=0)
     print  '****************************************'
-    dbg.max_projection_debug(np.max(current_image, axis=0))
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
 
     return np.max(current_image, axis=0)
 
@@ -430,7 +430,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
     #                           binary_labels, uniform_median, uniform_median_otsu)
-    dbg.robust_binarize_debug(base_image, binary_labels)
+    # dbg.robust_binarize_debug(base_image, binary_labels)
     return binary_labels
 
 
@@ -514,45 +514,59 @@ def in_contact(mask1, mask2, distance=10):
     return in_contact1, in_contact2
 
 
-@generator_wrapper(in_dims=(2,))
-def improved_watershed(binary_base):
+@generator_wrapper(in_dims=(2,2), out_dims=(2,))
+def improved_watershed(binary_base, intensity):
     sel_elem = disk(2)
-    # changed variable name for "label"
+    # changed variable name for "labels"
     post_closing_labels = closing(binary_base, sel_elem)
 
-    distance = ndi.distance_transform_edt(labels)
+    distance = ndi.distance_transform_edt(post_closing_labels)
     local_maxi = peak_local_max(distance,
                                 indices=False,  # we want the image mask, not peak position
                                 min_distance=10,  # about half of a bud with our size
                                 threshold_abs=10,  # allows to clear the noise
-                                labels=labels)
+                                labels=post_closing_labels)
     # we fuse the labels that are close together that escaped the min distance in local_maxi
     local_maxi = ndi.convolve(local_maxi, np.ones((5, 5)), mode='constant', cval=0.0)
     # finish the watershed
     expanded_maxi_markers = ndi.label(local_maxi, structure=np.ones((3, 3)))[0]
-    segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=labels)
+    segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=post_closing_labels)
 
 
-    print "labels array"
-    print labels
+    print "segmented_cell_labels"
+    print segmented_cells_labels
     print
-    # for i in np.nditer(labels):
-    #     print i
-
-    for i in labels:
-        count = 0
-        for j in i:
-            if j == 1:
-                count+=1
-            print i.shape
-        print i.shape
-            # average = count/(i.shape[0]*i.shape[1])
-
+    unique_segmented_cells_labels = np.unique(segmented_cells_labels)
+    unique_segmented_cells_labels = unique_segmented_cells_labels[1:]
+    print unique_segmented_cells_labels
+    for i in unique_segmented_cells_labels:
+        print i
+        my_mask = segmented_cells_labels == i
+        apply_mask = segmented_cells_labels[my_mask]
+        average_apply_mask = np.mean(intensity[my_mask])
+        print average_apply_mask
         print
-    print
-    print
+    #
+    # # for i in np.nditer(labels):
+    # #     print i
+    #
+    # for i in post_closing_labels:
+    #     count = 0
+    #     for j in i:
+    #         if j == 1:
+    #             count+=1
+    #         print i.shape
+    #     print i.shape
+    #     # find average pixel intensity
+    #
+    #     print
+    # print
+    # print
+    # whats the difference between labels and segmented_cell_labels?
+    #     labels has arrays with values 0 or 1, exclusively
+    #     segmented cell labels has different values since each label has its own value
 
-    dbg.improved_watershed_debug(segmented_cells_labels)
+    # dbg.improved_watershed_debug(segmented_cells_labels)
     return segmented_cells_labels
 
 
@@ -749,7 +763,7 @@ def agreeing_skeletons(float_surface, mito_labels):
     print type(active_threshold)
     print "medial", medial_skeleton
     print "active threshold", active_threshold
-    dbg.skeleton_debug(float_surface, mito_labels, skeletons)
+    # dbg.skeleton_debug(float_surface, mito_labels, skeletons)
     return skeletons
 
 
