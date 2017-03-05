@@ -385,7 +385,6 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
-    # print np.percentile(base_image, 99), np.sum(base_image)
     if np.percentile(base_image, 99) < 0.20:
         if np.percentile(base_image, 99) > 0:
             mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions
@@ -735,13 +734,6 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
 
     # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
 
-    # if label_mask == 0:
-    #     pass
-    #
-    #
-    #
-    #
-
     # dbg.weight_sum_zero_debug(label_mask, skeletons)
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
@@ -773,21 +765,6 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
 
 
     return final_classification, classification_mask, radius_mask, support_mask
-# the following is my addition but I think it would be better to add a filter earlier in the function, this may be called too late in the pipeline
-# to save it from crashing
-# def check_weights_nonzero(classification_roll, classification_mask, weights, radius_mask, support_mask):
-#
-#     print type(classification_roll)
-#     print type(classification_mask)
-#     print type(weights)
-#     print type(radius_mask)
-#     print type(support_mask)
-#     if sum(weights) != 0:
-#         final_classification = np.average(classification_roll, weights=weights)
-#         return final_classification, classification_mask, radius_mask, support_mask
-#     else:
-#         print "weights sum to zero"
-#         return None, None, None, None
 
 
 

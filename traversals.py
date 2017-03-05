@@ -51,15 +51,6 @@ def Linhao_traverse(main_root,
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
                     prefix = cf.split_and_trim(current_location, main_root)
                     img_codename = img.split(' ')[0].split('_')
-
-
-                    # # my changes
-                    # if img_codename[-2] == '4' and prefix[0] == '07072016ssa1' and prefix[1] == 'Mutant' and prefix[2] == 'REC30MIN':
-                    # # if img_codename:
-                    #     # problem_images.append((prefix))
-                    #     print
-                    #     print "code", img_codename
-                    #     print "prefix", prefix
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     matched_images[name_pattern][color] = os.path.join(current_location, img)
@@ -76,30 +67,6 @@ def Linhao_traverse(main_root,
                     _date = prefix[0][:8]
                     tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
                     tags_dict[name_pattern].append(prefix[-2])
-                    # end of my changes
-
-
-                        #color = matching_map[img_codename[-1]]
-                    #name_pattern = ' - '.join(prefix + img_codename[:-1])
-                    #matched_images[name_pattern][color] = os.path.join(current_location, img)
-                    #time_stamp = prefix[-1]
-
-                    #if time_stamp == 'HS':
-                    #    time = 0
-                    #elif 'HS' in time_stamp:
-                    #    time = -30
-                    #else:
-                     #   time = time_stamp[3:-3] #int(time_stamp[3:-3])
-                    #tags_dict[name_pattern] = []
-                    #tags_dict[name_pattern].append(time)  # time in the times series
-                    #_date = prefix[0][:8]
-                    #tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
-                    #print "tags dict", tags_dict
-                    #tags_dict[name_pattern].append(prefix[-2])  # strain name
-                    # if len(prefix) > 3:
-                    #     tags_dict[name_pattern].append(prefix[2])
-                    # else:
-                    #     tags_dict[name_pattern].append('')
 
 
     delset = []
