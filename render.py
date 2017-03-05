@@ -113,13 +113,13 @@ def linhao_mch_render(name_pattern, proj_mCh, mitochondria, skeleton,
     plt.imshow(final_classes, interpolation='nearest', cmap='coolwarm')
     plt.contour(cell_binary, [0.5], colors='k')
 
-    # if not save:
-    #     plt.show()
-    #
-    # else:
-    #     name_puck = directory_to_save_to+'/'+'mCh_base-'+name_pattern+'.png'
-    #     plt.savefig(name_puck)
-    #     plt.close()
+    if not save:
+        plt.show()
+
+    else:
+        name_puck = directory_to_save_to+'/'+'mCh_base-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
 
 
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2), out_dims=(None,))
@@ -155,13 +155,13 @@ def linhao_mqvi_render(name_pattern, mito_outlines, cell_labels,
     plt.colorbar()
 
 
-    # if not save:
-    #     plt.show()
-    #
-    # else:
-    #     name_puck = directory_to_save_to+'/'+'mqvi-'+name_pattern+'.png'
-    #     plt.savefig(name_puck)
-    #     plt.close()
+    if not save:
+        plt.show()
+
+    else:
+        name_puck = directory_to_save_to+'/'+'mqvi-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
 
 
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
