@@ -228,17 +228,10 @@ def splitter(outer_generator, to, sources, mask):
 def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
-        print
-        print
-        print "starting for each function"
 
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
         for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
-        print "made it after for loop"
-        print "primary namespace-for each", len(primary_namespace)
-        print type(embedded_transformer)
-        print type(inside)
         yield primary_namespace
 
 
@@ -338,9 +331,6 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
     # dbg.max_projection_debug(np.max(current_image, axis=0))
-    print
-    print "gamma stabilize"
-    print current_image.shape
     return stabilized
 
 
@@ -369,11 +359,6 @@ def sum_projection(current_image):
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def max_projection(current_image):
-    print "type-current image", type(current_image)
-    print current_image
-    print current_image.shape
-    print "max", np.max(current_image, axis=0)
-    print  '****************************************'
     # dbg.max_projection_debug(np.max(current_image, axis=0))
 
     return np.max(current_image, axis=0)
@@ -517,6 +502,7 @@ def in_contact(mask1, mask2, distance=10):
 @generator_wrapper(in_dims=(2,2), out_dims=(2,))
 def improved_watershed(binary_base, intensity):
     sel_elem = disk(2)
+
     # changed variable name for "labels"
     post_closing_labels = closing(binary_base, sel_elem)
 
@@ -533,40 +519,21 @@ def improved_watershed(binary_base, intensity):
     segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=post_closing_labels)
 
 
-    print "segmented_cell_labels"
-    print segmented_cells_labels
-    print
+
     unique_segmented_cells_labels = np.unique(segmented_cells_labels)
     unique_segmented_cells_labels = unique_segmented_cells_labels[1:]
-    print unique_segmented_cells_labels
-    for i in unique_segmented_cells_labels:
-        print i
-        my_mask = segmented_cells_labels == i
+    average_apply_mask_list = []
+    for cell_label in unique_segmented_cells_labels:
+        my_mask = segmented_cells_labels == cell_label
         apply_mask = segmented_cells_labels[my_mask]
         average_apply_mask = np.mean(intensity[my_mask])
-        print average_apply_mask
-        print
-    #
-    # # for i in np.nditer(labels):
-    # #     print i
-    #
-    # for i in post_closing_labels:
-    #     count = 0
-    #     for j in i:
-    #         if j == 1:
-    #             count+=1
-    #         print i.shape
-    #     print i.shape
-    #     # find average pixel intensity
-    #
-    #     print
-    # print
-    # print
-    # whats the difference between labels and segmented_cell_labels?
-    #     labels has arrays with values 0 or 1, exclusively
-    #     segmented cell labels has different values since each label has its own value
-
-    # dbg.improved_watershed_debug(segmented_cells_labels)
+        if average_apply_mask < 0.005:
+            average_apply_mask = 0
+            segmented_cells_labels[segmented_cells_labels == cell_label] = 0
+        average_apply_mask_list.append(average_apply_mask)
+    # x_labels = ['cell13', 'cell1', 'cell7', 'cell2', 'cell14', 'cell6', 'cell3', 'cell5', 'cell4', 'cell11', 'cell12', 'cell8', 'cell10', 'cell9']
+    # dbg.improved_watershed_debug(segmented_cells_labels, intensity)
+    # dbg.improved_watershed_plot_intensities(x_labels, average_apply_mask_list.sort())
     return segmented_cells_labels
 
 
@@ -588,7 +555,6 @@ def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intens
 
 @generator_wrapper(in_dims=(2,))
 def qualifying_gfp(max_sum_projection):
-    print "max_sum_projection", max_projection > 0
     return max_sum_projection > 0
 
 
@@ -660,9 +626,6 @@ def detect_upper_outliers(cells_average_gfp_list):
 def paint_mask(label_masks, labels_to_paint):
 
     #label mask is GFP upper outlier cells
-    print type(label_masks)
-    print sum(sum(label_masks))
-    # sum is 1,208,400
 
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
@@ -676,7 +639,6 @@ def paint_mask(label_masks, labels_to_paint):
 def mask_filter_2d(base, _filter):
     ret_val = np.zeros_like(base)
     ret_val[_filter.astype(np.bool)] = base[_filter.astype(np.bool)]
-    print sum(sum(ret_val)) #same sum as label masks
 
     return ret_val
 
@@ -759,10 +721,6 @@ def agreeing_skeletons(float_surface, mito_labels):
 
     skeletons = np.zeros_like(medial_skeleton)
     skeletons[topological_skeleton] = skeleton_convolve[topological_skeleton]
-    print type(medial_skeleton)
-    print type(active_threshold)
-    print "medial", medial_skeleton
-    print "active threshold", active_threshold
     # dbg.skeleton_debug(float_surface, mito_labels, skeletons)
     return skeletons
 
@@ -784,7 +742,7 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     #
     #
 
-    dbg.weight_sum_zero_debug(label_mask, skeletons)
+    # dbg.weight_sum_zero_debug(label_mask, skeletons)
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 

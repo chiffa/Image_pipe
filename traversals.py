@@ -1,7 +1,29 @@
 import numpy as np
 import core_functions as cf
 from collections import defaultdict
+import logging
 import os
+
+
+logger = logging.getLogger('Default Debug Logger')
+logger.setLevel(logging.DEBUG)
+
+fh = logging.FileHandler('debug_log.log')
+fh.setLevel(logging.DEBUG)
+
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+
 
 def Linhao_traverse(main_root,
                     matching_rule='c', matching_map=None):
@@ -24,43 +46,36 @@ def Linhao_traverse(main_root,
 
     for current_location, sub_directories, files in os.walk(main_root):
         if files:
-
-            # my changes
-            # problem_images = []
-            # end of my changes
-
             for img in files:
-                # original: if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                    # original raised error since didn't recognize some images that weren't formatted like the others
+                # if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
                     prefix = cf.split_and_trim(current_location, main_root)
                     img_codename = img.split(' ')[0].split('_')
 
 
-                    # my changes
-                    if img_codename[-2] == '4' and prefix[0] == '07072016ssa1' and prefix[1] == 'Mutant' and prefix[2] == 'REC30MIN':
-                    # if img_codename:
-                        # problem_images.append((prefix))
-                        print
-                        print "code", img_codename
-                        print "prefix", prefix
-                        color = matching_map[img_codename[-1]]
-                        name_pattern = ' - '.join(prefix + img_codename[:-1])
-                        matched_images[name_pattern][color] = os.path.join(current_location, img)
-                        time_stamp = prefix[-1]
+                    # # my changes
+                    # if img_codename[-2] == '4' and prefix[0] == '07072016ssa1' and prefix[1] == 'Mutant' and prefix[2] == 'REC30MIN':
+                    # # if img_codename:
+                    #     # problem_images.append((prefix))
+                    #     print
+                    #     print "code", img_codename
+                    #     print "prefix", prefix
+                    color = matching_map[img_codename[-1]]
+                    name_pattern = ' - '.join(prefix + img_codename[:-1])
+                    matched_images[name_pattern][color] = os.path.join(current_location, img)
+                    time_stamp = prefix[-1]
 
-                        if time_stamp == 'HS':
-                            time = 0
-                        elif 'HS' in time_stamp:
-                            time = -30
-                        else:
-                            time = time_stamp[3:-3]  # int(time_stamp[3:-3])
-                        tags_dict[name_pattern] = []
-                        tags_dict[name_pattern].append(time)  # time in the times series
-                        _date = prefix[0][:8]
-                        tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
-                        print "tags dict", tags_dict
-                        tags_dict[name_pattern].append(prefix[-2])
+                    if time_stamp == 'HS':
+                        time = 0
+                    elif 'HS' in time_stamp:
+                        time = -30
+                    else:
+                        time = time_stamp[3:-3]  # int(time_stamp[3:-3])
+                    tags_dict[name_pattern] = []
+                    tags_dict[name_pattern].append(time)  # time in the times series
+                    _date = prefix[0][:8]
+                    tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
+                    tags_dict[name_pattern].append(prefix[-2])
                     # end of my changes
 
 
@@ -91,10 +106,10 @@ def Linhao_traverse(main_root,
     for name_pattern, (color_set) in matched_images.iteritems():
         # debugger.logger.debug(color_set)
         if any([color == '' for color in color_set]):
-            debugger.logger.info('in %s, colorset is broken:', name_pattern)
+            logger.info('in %s, colorset is broken:', name_pattern)
             for color_name in color_set:
-                debugger.logger.info('\t %s', color_name)
-            debugger.logger.info('name_pattern will be deleted')
+                logger.info('\t %s', color_name)
+            logger.info('name_pattern will be deleted')
             delset.append(name_pattern)
 
     for name_pattern in delset:

@@ -113,7 +113,6 @@ def linhao_mch_render(name_pattern, proj_mCh, mitochondria, skeleton,
     plt.imshow(final_classes, interpolation='nearest', cmap='coolwarm')
     plt.contour(cell_binary, [0.5], colors='k')
 
-    plt.show()
     # if not save:
     #     plt.show()
     #
@@ -155,7 +154,6 @@ def linhao_mqvi_render(name_pattern, mito_outlines, cell_labels,
     plt.imshow(mch_mqvi, interpolation='nearest', cmap='hot')
     plt.colorbar()
 
-    plt.show()
 
     # if not save:
     #     plt.show()
