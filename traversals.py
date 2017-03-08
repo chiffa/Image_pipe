@@ -98,7 +98,7 @@ def Linhao_traverse(main_root,
     # for name_pattern, color_set in matched_images.iteritems():
 
 
-
+    # ask for user input before line 92, DO NOT OVERRIDE ORIGINAL CSV FILE UNTIL USER EXPLICITLY INPUTS FOR YOU TO DO SO
     user_input_about_new_csv_file = raw_input("If you would like to create a new csv file to write to, enter 1. Otherwise, enter 2")
     if user_input_about_new_csv_file == '1':
         f2 = open("matched_images.csv", 'rb')
@@ -106,7 +106,7 @@ def Linhao_traverse(main_root,
     else:
          start_image = raw_input("Enter the name pattern (first column of csv file) of the image you would like to start with")
         reader = csv.reader(f1, delimiter = '\t')
-    f3 = open("matched_images.tmp", 'wb')
+        f3 = open("matched_images.tmp", 'wb')
 
 
     for row in reader:
