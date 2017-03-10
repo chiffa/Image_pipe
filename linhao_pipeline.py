@@ -17,7 +17,7 @@ translator = {'w1488': 0,
 # source = uf.Linhao_traverse("L:\\Users\\jerry\\Image\\ForAndrei\\Ry233282285",
 #                             matching_map=translator)
 
-source = uf.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/",
+source = uf.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/SSAmutant",
                             matching_map=translator)
 
 # that architecture actually removes the need for the debug line
