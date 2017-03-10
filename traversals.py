@@ -153,29 +153,6 @@ def Linhao_traverse(main_root,
         row[3] = 1
         writer_check_tmp.writerow(row)
 
-
-
-
-
-
-
-
-
-        # print 'starting to analyze', name_pattern
-        # if count == 0:
-        #     sum1 = summary.summarize(all_objects)
-        # if count == -100:
-        #     sum2 = summary.summarize(all_objects)
-        #     diff12 = summary.get_diff(sum1, sum2)
-        #     diff21 = summary.get_diff(sum2, sum1)
-        #     summary.print_(diff12)
-        #     summary.print_(diff21)
-        #     summary.print_(sum1)
-        #     summary.print_(sum2)
-
-
-
-
 def name_channels(stack_group_generator, channel_names):
     """
     Assigns names to the channel for the future processing and bundles them together
