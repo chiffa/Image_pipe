@@ -95,43 +95,41 @@ def Linhao_traverse(main_root,
     if user_input_about_new_csv_file == '1':
         print "Preparing a new CSV file"
         f1 = open("matched_images.csv", 'wb')
-
         # this is the file we need to save unless user provides input saying we can override it
         writer = csv.writer(f1, delimiter='\t')
         for key in matched_images:
             print key
             writer.writerow([key] + matched_images[key] + [0])
-        f1_read = open('matched_images.csv', 'rb')
-        reader_original = csv.reader(f1_read, delimiter = '\t')
-        for row in reader_original:
-            print row
-
-            name_pattern = row[0]
-            color_set = [row[1], row[2]]
-
-            writer_check = open('matched_images.csv', 'rb')
 
     else:
         print "Continuing where the process last left off"
-        f1 = open("matched_images.csv", 'rb')
-        reader_check = csv.reader(f1, delimiter = '\t')
-        for row in reader_check:
+
+    f1_read = open('matched_images.csv', 'rb')
+    reader_original = csv.reader(f1_read, delimiter='\t')
+    for row in reader_original:
+        name_pattern = row[0]
+        color_set = [row[1], row[2]]
+        if user_input_about_new_csv_file == '2':
+            f2 = open("matched_images.tmp", 'wb')
+            writer_check = csv.writer(f2, delimiter='\t')
             if row[3] == 1:
+                writer_check.writerow(row)
                 continue
-            else:
-                name_pattern = row[0]
-                color_set = [row[1], row[2]]
-                f2 = open("matched_images.tmp", 'wb')
-                writer_check = csv.writer(f2, delimiter = '\t')
-    reader_check = open('matched_images.csv', 'rb')
-    channels = []
-    for color in color_set:
-        channels.append(cf.tiff_stack_2_np_arr(color))
-    yield name_pattern, tags_dict[name_pattern], channels
-    for row in reader_check:
+        else:
+            f1_write = open('matched_images.csv', 'wb')
+            writer_check = csv.writer(f1_write, delimiter='\t')
+        channels = []
+        for color in color_set:
+            channels.append(cf.tiff_stack_2_np_arr(color))
+        yield name_pattern, tags_dict[name_pattern], channels
+
         if row[0] == name_pattern:
             row[3] = 1
             writer_check.writerow(row)
+
+
+    # reader_check = csv.reader(f1, delimiter = '\t')
+
         # print 'starting to analyze', name_pattern
         # if count == 0:
         #     sum1 = summary.summarize(all_objects)
