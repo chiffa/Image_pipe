@@ -133,13 +133,13 @@ def Linhao_traverse(main_root,
             for new_csv_row in csv_list:
                 override_csv.writerow(new_csv_row)
 
-    f1_read = open('matched_images.csv', 'rb')
+    open_updated_csv_to_read = open('matched_images.csv', 'rb')
+    csv_reader = csv.reader(open_updated_csv_to_read, delimiter='\t')
 
-    reader_original = csv.reader(f1_read, delimiter='\t')
-    f2 = open("matched_images.tmp", 'wb')
-    writer_check_tmp = csv.writer(f2, delimiter='\t')
+    open_tmp_to_write = open("matched_images.tmp", 'wb')
+    writer_check_tmp = csv.writer(open_tmp_to_write, delimiter='\t')
 
-    for row in reader_original:
+    for row in csv_reader:
         name_pattern = row[0]
         color_set = [row[1], row[2]]
         if row[3] == 1:
