@@ -8,6 +8,7 @@ import csv
 
 
 
+
 all_objects = muppy.get_objects()
 print len(all_objects)
 
@@ -94,41 +95,71 @@ def Linhao_traverse(main_root,
 
     if user_input_about_new_csv_file == '1':
         print "Preparing a new CSV file"
-        f1 = open("matched_images.csv", 'wb')
+        initial_open = open("matched_images.csv", 'wb')
         # this is the file we need to save unless user provides input saying we can override it
-        writer = csv.writer(f1, delimiter='\t')
+        writer = csv.writer(initial_open, delimiter='\t')
         for key in matched_images:
             print key
             writer.writerow([key] + matched_images[key] + [0])
+        initial_open.close()
 
     else:
         print "Continuing where the process last left off"
+        file_exists = os.path.isfile("matched_images.tmp")
+
+        if file_exists:
+
+            open_tmp = open('matched_images.tmp', 'r')
+            read_preexisting_tmp = csv.reader(open_tmp, delimiter = '\t')
+            tmp_list = []
+            for row in read_preexisting_tmp:
+                tmp_list.append(row)
+            open_tmp.close()
+
+            open_csv = open('matched_images.csv', 'r')
+            read_preexisting_csv = csv.reader(open_csv, delimiter = '\t')
+            csv_list = []
+            for row in read_preexisting_csv:
+                csv_list.append(row)
+            open_csv.close()
+
+            for csv_row in csv_list:
+                for tmp_row in tmp_list:
+                    if csv_row[0] == tmp_row[0]:
+                        csv_row[3] = tmp_row[3]
+
+            open_csv_write = open('matched_images.csv', 'wb')
+            override_csv = csv.writer(open_csv_write, delimiter='\t')
+            for new_csv_row in csv_list:
+                override_csv.writerow(new_csv_row)
 
     f1_read = open('matched_images.csv', 'rb')
+
     reader_original = csv.reader(f1_read, delimiter='\t')
+    f2 = open("matched_images.tmp", 'wb')
+    writer_check_tmp = csv.writer(f2, delimiter='\t')
+
     for row in reader_original:
         name_pattern = row[0]
         color_set = [row[1], row[2]]
-        if user_input_about_new_csv_file == '2':
-            f2 = open("matched_images.tmp", 'wb')
-            writer_check = csv.writer(f2, delimiter='\t')
-            if row[3] == 1:
-                writer_check.writerow(row)
-                continue
-        else:
-            f1_write = open('matched_images.csv', 'wb')
-            writer_check = csv.writer(f1_write, delimiter='\t')
+        if row[3] == 1:
+            writer_check_tmp.writerow(row)
+            continue
         channels = []
         for color in color_set:
             channels.append(cf.tiff_stack_2_np_arr(color))
         yield name_pattern, tags_dict[name_pattern], channels
+        print row[3]
+        row[3] = 1
+        writer_check_tmp.writerow(row)
 
-        if row[0] == name_pattern:
-            row[3] = 1
-            writer_check.writerow(row)
 
 
-    # reader_check = csv.reader(f1, delimiter = '\t')
+
+
+
+
+
 
         # print 'starting to analyze', name_pattern
         # if count == 0:
