@@ -13,6 +13,7 @@ def Kristen_traverse(main_root,
     tags_dict = defaultdict(lambda: [])
 #     using a dictionary instead of list since grouped by mutliple colors and may need to superimpose them
 #     provide matching map based on translator (a dictionary with color codes and associated colors/dyes)
+    image_list = {'B_1': [], 'B_2':[], 'B_3':[], 'B_4':[], 'B_5':[], 'B_6':[], 'B_7':[], 'C_2':[], 'C_3':[], 'C_4':[]}
 
     for current_location, sub_directories, files in os.walk(main_root):
         if files:
@@ -28,11 +29,14 @@ def Kristen_traverse(main_root,
                     print "name pattern", name_pattern
                     group_by = img_codename[0][:2]
                     # grouping by color
-                    print "group by", group_by, type(group_by)
-                    print
-                    print
+                    print "group by", group_by
+                    if name_pattern[-3::] in image_list:
+                        image_list[name_pattern[-3::]].append(img_codename)
+                    # project the three channels
                     color = group_by
                     # matched_images[name_pattern][color] = os.path.join(current_location, img)
+                    print type(img)
+            print image_list
 
     for name_pattern, group_by, image_location in matched_images:
         print "reached for loop"
@@ -42,6 +46,7 @@ def Kristen_traverse(main_root,
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
 #     dont forget to add the csv/user input portion after this part is running smoothly
+# need to add yield, but first fix matched images so it works properly
 
 translator = {'C1':3, 'C3':0, 'C4':1}
 # C1 = DAPI, C2 = GFP, C3 = mCherry
