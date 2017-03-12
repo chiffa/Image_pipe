@@ -47,6 +47,8 @@ def Linhao_traverse(main_root,
     :return:
     """
     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
+    print matched_images
+    print
     tags_dict = defaultdict(lambda: [])
 
     if matching_rule:
@@ -60,9 +62,15 @@ def Linhao_traverse(main_root,
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
 
                     prefix = cf.split_and_trim(current_location, main_root)
+                    print "prefix", prefix, type(prefix)
+
                     img_codename = img.split(' ')[0].split('_')
+                    print "img_codename", img_codename, type(img_codename)
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
+                    print "name pattern", name_pattern, type(name_pattern)
+                    print
+                    print
                     matched_images[name_pattern][color] = os.path.join(current_location, img)
                     time_stamp = prefix[-1]
 
@@ -79,6 +87,7 @@ def Linhao_traverse(main_root,
                     tags_dict[name_pattern].append(prefix[-2])
 
     delset = []
+
     for name_pattern, (color_set) in matched_images.iteritems():
         # debugger.logger.debug(color_set)
         if any([color == '' for color in color_set]):
@@ -184,6 +193,10 @@ def Akshay_traverse(main_root):
                     img_codename = [img.split('.')[0]]
                     name_pattern = ' - '.join(prefix + img_codename)
                     group_by = img_codename[0].split('rpe')[1].split('dapi')[0].strip()
+                    print "img codename", img_codename
+                    print "name pattern", name_pattern
+                    print "group by", group_by
+                    print
                     matched_images.append((name_pattern, group_by, os.path.join(current_location, img)))
 
     for name_pattern, group_by, image_location in matched_images:
