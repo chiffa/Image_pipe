@@ -42,21 +42,22 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
                         print "color", color, type(color)
                         matched_images[name_pattern][color] = os.path.join(current_location, img)
 
-                        print
-                        print
+
     for name in matched_images:
         name_pattern_list.append(name_pattern)
         plt.figure(figsize=(20.0, 15.0))
         plt.suptitle('Projected DAPI. GFP, mCherry')
         main_ax = plt.subplot(121)
         plt.title('DAPI')
-        plt.imshow(name[0], interpolation='nearest', cmap=plt.cm.spectral)
+        dapi = np.max(name[0], axis=0)
+        plt.imshow(dapi, interpolation='nearest', cmap='gray')
         cbar = plt.colorbar()
         plt.title('GFP')
-        plt.imshow(name[1], interpolation='nearest', cmap='gray')
-        plt.imshow(name[2], interpolation='nearest', alpha=0.3)
-    print "here"
-    print set(name_pattern_list)
+        gfp = np.max(name[1], axis=0)
+        plt.imshow(gfp, interpolation='nearest', cmap='gray')
+        mcherry = np.max(name[2], axis=0)
+        plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
+
 
     for key in matched_images:
         print key
