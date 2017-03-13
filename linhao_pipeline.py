@@ -85,7 +85,7 @@ mito_3d_from_2d_mask = cf.for_each(segmented_mito, cf._3d_mask_from_2d_mask, 'pe
                                     in_channel=['mCherry', 'mito_labels'],
                                     out_channel='mito_labels_3d')
 
-# problem - mqvi does not seem to be working on an indifidual basis
+# problem - mqvi does not seem to be working on an individual basis
 
 GFP_AEQVI = cf.for_each(mito_3d_from_2d_mask, cf.volume_aqvi, 'per_cell',
                         in_channel=['GFP', 'mito_labels_3d'],

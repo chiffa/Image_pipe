@@ -8,6 +8,8 @@ import csv
 from matplotlib import pyplot as plt
 
 
+# Once this script is approved, REMOVE DEBUG STATEMENTS AND COMMIT+PUSH CHANGES
+
 translator = {'C1':0,
               'C3':1,
               'C4':2}
@@ -43,20 +45,7 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
                         matched_images[name_pattern][color] = os.path.join(current_location, img)
 
 
-    for name in matched_images:
-        name_pattern_list.append(name_pattern)
-        plt.figure(figsize=(20.0, 15.0))
-        plt.suptitle('Projected DAPI. GFP, mCherry')
-        main_ax = plt.subplot(121)
-        plt.title('DAPI')
-        dapi = np.max(name[0], axis=0)
-        plt.imshow(dapi, interpolation='nearest', cmap='gray')
-        cbar = plt.colorbar()
-        plt.title('GFP')
-        gfp = np.max(name[1], axis=0)
-        plt.imshow(gfp, interpolation='nearest', cmap='gray')
-        mcherry = np.max(name[2], axis=0)
-        plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
+
 
 
     for key in matched_images:
@@ -125,19 +114,37 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
     open_tmp_to_write = open("matched_images.tmp", 'wb')
     writer_check_tmp = csv.writer(open_tmp_to_write, delimiter='\t')
 
-    # for row in csv_reader:
-    #     name_pattern = row[0]
-    #     color_set = [row[1], row[2]]
-    #     if row[3] == 1:
-    #         writer_check_tmp.writerow(row)
-    #         continue
-    #     channels = []
-    #     for color in color_set:
-    #         channels.append(cf.tiff_stack_2_np_arr(color))
-    #     yield name_pattern, tags_dict[name_pattern], channels
-    #     print row[3]
-    #     row[3] = 1
-    #     writer_check_tmp.writerow(row)
+    for row in csv_reader:
+        name_pattern = row[0]
+        color_set = [row[1], row[2], row[3]]
+        if row[3] == 1:
+            writer_check_tmp.writerow(row)
+            continue
+        channels = []
+        print "color set", color_set
+        plot_list = []
+        for color in color_set:
+            print "color", color
+            channels.append(cf.tiff_stack_2_np_arr(color))
+            plot_list.append(cf.tiff_stack_2_np_arr(color))
+        plt.figure(figsize=(20.0, 15.0))
+        plt.suptitle('Projected DAPI. GFP, mCherry')
+        main_ax = plt.subplot(121)
+        plt.title('DAPI')
+        dapi = np.max(plot_list[0], axis=0)
+        plt.imshow(dapi, interpolation='nearest', cmap='gray')
+        cbar = plt.colorbar()
+        plt.title('GFP')
+        gfp = np.max(plot_list[1], axis=0)
+        plt.imshow(gfp, interpolation='nearest', cmap='gray')
+        mcherry = np.max(plot_list[2], axis=0)
+        plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
+        plt.show()
+
+        yield name_pattern, channels
+        print row[3]
+        row[3] = 1
+        writer_check_tmp.writerow(row)
 
 
 Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
