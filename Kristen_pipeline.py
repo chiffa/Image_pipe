@@ -69,3 +69,31 @@ GFP_o_n_filtered = cf.filter_labels(GFP_seg_contacted,
 GFP_en_eq = cf.label_based_aq(GFP_o_n_filtered,
                               in_channel=['extra_nuclear_GFP','GFP_o_n'],
                               out_channel=['av_en_GFP', 'av_en_GFP_pad'])
+
+# Segmentation of mCherry
+mCherry_aq = cf.label_based_aq(GFP_en_eq,
+                           in_channel=['nuclei', 'mCherry'],
+                           out_channel=['nuc_mCherry', 'nuc_mCherry_pad'])
+
+mCherry_o_n = cf.exclude_region(mCherry_aq,
+                            in_channel=['nuclei', 'mCherry'],
+                            out_channel='mCherry_o_n')
+
+mCherry_o_n_segmented = cf.robust_binarize(mCherry_o_n,
+                                       in_channel='mCherry_o_n',
+                                       out_channel='mCherry_o_n_seg',
+                                       heterogeity_size=10, feature_size=100)
+
+mCherry_seg_contacted = cf.in_contact(mCherry_o_n_segmented,
+                                  in_channel=['mCherry_o_n_seg', 'nuclei'],
+                                  out_channel=['mCherry_o_n_seg', '_'])
+
+mCherry_o_n_filtered = cf.filter_labels(mCherry_seg_contacted,
+                                    in_channel=['vor_segment', 'mCherry_o_n_seg'],
+                                    out_channel=['extra_nuclear_mCherry'],
+                                    min_feature_size=30)
+
+mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
+                              in_channel=['extra_nuclear_mCherry', 'mCherry_o_n'],
+                              out_channel=['av_en_mCherry', 'av_en_mCherry_pad'])
+
