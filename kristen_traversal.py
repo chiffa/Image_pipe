@@ -137,11 +137,14 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
         plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
         plt.show()
 
-        yield name_pattern, channels
-        print row[3]
-        row[3] = 1
-        writer_check_tmp.writerow(row)
-
+        # yield name_pattern, channels
+        # print row[3]
+        # row[3] = 1
+        # writer_check_tmp.writerow(row)
+translator = {'C1':0,
+              'C3':1,
+              'C4':2}
+Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
 def name_channels(stack_group_generator, channel_names):
     """
     Assigns names to the channel for the future processing and bundles them together

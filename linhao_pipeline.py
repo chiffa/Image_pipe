@@ -103,7 +103,6 @@ classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondri
                          in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])
-# PROBLEM occurs here, can't seem to obtain classified, stops after for loop with "pass" after calling embedded transformer
 
 mito_tiled = cf.tile_from_mask(classified, 'per_cell', 'mito_binary')
 
