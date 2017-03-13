@@ -10,9 +10,6 @@ from matplotlib import pyplot as plt
 
 # Once this script is approved, REMOVE DEBUG STATEMENTS AND COMMIT+PUSH CHANGES
 
-translator = {'C1':0,
-              'C3':1,
-              'C4':2}
 
 
 def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
@@ -127,13 +124,12 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
             print "color", color
             channels.append(cf.tiff_stack_2_np_arr(color))
             plot_list.append(cf.tiff_stack_2_np_arr(color))
+
         plt.figure(figsize=(20.0, 15.0))
         plt.suptitle('Projected DAPI. GFP, mCherry')
-        main_ax = plt.subplot(121)
         plt.title('DAPI')
         dapi = np.max(plot_list[0], axis=0)
         plt.imshow(dapi, interpolation='nearest', cmap='gray')
-        cbar = plt.colorbar()
         plt.title('GFP')
         gfp = np.max(plot_list[1], axis=0)
         plt.imshow(gfp, interpolation='nearest', cmap='gray')
@@ -146,9 +142,23 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
         row[3] = 1
         writer_check_tmp.writerow(row)
 
+def name_channels(stack_group_generator, channel_names):
+    """
+    Assigns names to the channel for the future processing and bundles them together
 
-Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
+    :param stack_group_generator:
+    :param channel_names:
+    :return:
+    """
 
+    for name_pattern, group_ids, channels in stack_group_generator:
+        group_dict = {'name pattern': name_pattern,
+                      'group id': group_ids}
+        group_dict['channel list'] = channel_names
+        for chan_name, chan in zip(channel_names, channels):
+            group_dict[chan_name] = chan
+
+        yield group_dict
 
 # # C1 = DAPI, C3 = GFP, C4 = mCherry
 
