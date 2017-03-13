@@ -17,6 +17,10 @@ source = uf.Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,s
 
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
+# similar calculations to Linhao's data, segmentation similar to Akshay's
+# in Kristen's case what should in and out channels be?
+# how to do the projection part? (sum vs max)
+
 
 
 
