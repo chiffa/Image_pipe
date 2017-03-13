@@ -47,6 +47,7 @@ def Linhao_traverse(main_root,
     :return:
     """
     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
+    print len(matched_images.keys())
     print matched_images
     print
     tags_dict = defaultdict(lambda: [])
@@ -69,6 +70,7 @@ def Linhao_traverse(main_root,
                     color = matching_map[img_codename[-1]]
                     name_pattern = ' - '.join(prefix + img_codename[:-1])
                     print "name pattern", name_pattern, type(name_pattern)
+                    print "color", color
                     print
                     print
                     matched_images[name_pattern][color] = os.path.join(current_location, img)

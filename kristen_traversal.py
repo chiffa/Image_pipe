@@ -5,53 +5,62 @@ import logging as logger
 import os
 from pympler import  muppy, summary
 import csv
-
-translator = {'C1':3,
-              'C3':0,
-              'C4':1}
+from matplotlib import pyplot as plt
 
 
-def Kristen_traverse(main_root,
-                    matching_rule='c', matching_map=None):
-    matched_images = defaultdict(lambda: [''] * len(matching_map.keys()))
+translator = {'C1':0,
+              'C3':1,
+              'C4':2}
+
+
+def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
+    print "starting kristen's traversal"
+    matched_images = defaultdict(lambda: [''] * len(matching_map))
+    # reference: {name_pattern:[location of DAPI, location of GFP, location of mCherry]}
+    print len(matching_map)
     print matched_images
     tags_dict = defaultdict(lambda: [])
-
+    # do we even need this? For linhao's case this was used to keep track of HS time
+    name_pattern_list = []
     if matching_rule:
         assert (matching_map is not None)
-
     for current_location, sub_directories, files in os.walk(main_root):
-        print files
+            if files:
+                for img in files:
+                    if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
+                        prefix = cf.split_and_trim(current_location, main_root)
+                        img_codename = [img.split('.')[0]]
+                        print img_codename[0].split(' ')[1:]
+                        name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
+                        print "prefix", prefix
+                        print "img codename", img_codename
+                        print "name pattern", name_pattern, type(name_pattern)
+                        group_by = img_codename[0][:2]
+                        color = matching_map[img_codename[0].split('-')[0]]
 
-        if files:
+                        print "group by", group_by
+                        print "color", color, type(color)
+                        matched_images[name_pattern][color] = os.path.join(current_location, img)
 
-            for img in files:
-                if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
+                        print
+                        print
+    for name in matched_images:
+        name_pattern_list.append(name_pattern)
+        plt.figure(figsize=(20.0, 15.0))
+        plt.suptitle('Projected DAPI. GFP, mCherry')
+        main_ax = plt.subplot(121)
+        plt.title('DAPI')
+        plt.imshow(name[0], interpolation='nearest', cmap=plt.cm.spectral)
+        cbar = plt.colorbar()
+        plt.title('GFP')
+        plt.imshow(name[1], interpolation='nearest', cmap='gray')
+        plt.imshow(name[2], interpolation='nearest', alpha=0.3)
+    print "here"
+    print set(name_pattern_list)
 
-                    prefix = cf.split_and_trim(current_location, main_root)
-                    print "prefix", prefix, type(prefix)
-
-                    img_codename = img.split(' ')[0].split('_')
-                    print "img_codename", img_codename, type(img_codename)
-                    color = matching_map[img_codename[-1]]
-                    name_pattern = ' - '.join(prefix + img_codename[:-1])
-                    print "name pattern", name_pattern, type(name_pattern)
-                    print
-                    print
-                    matched_images[name_pattern][color] = os.path.join(current_location, img)
-                    time_stamp = prefix[-1]
-
-                    if time_stamp == 'HS':
-                        time = 0
-                    elif 'HS' in time_stamp:
-                        time = -30
-                    else:
-                        time = time_stamp[3:-3]  # int(time_stamp[3:-3])
-                    tags_dict[name_pattern] = []
-                    tags_dict[name_pattern].append(time)  # time in the times series
-                    _date = prefix[0][:8]
-                    tags_dict[name_pattern].append("%s-%s-%s" % (_date[:2], _date[2:4], _date[4:]))
-                    tags_dict[name_pattern].append(prefix[-2])
+    for key in matched_images:
+        print key
+        print matched_images[key]
 
     delset = []
 
@@ -115,65 +124,23 @@ def Kristen_traverse(main_root,
     open_tmp_to_write = open("matched_images.tmp", 'wb')
     writer_check_tmp = csv.writer(open_tmp_to_write, delimiter='\t')
 
-    for row in csv_reader:
-        name_pattern = row[0]
-        color_set = [row[1], row[2]]
-        if row[3] == 1:
-            writer_check_tmp.writerow(row)
-            continue
-        channels = []
-        for color in color_set:
-            channels.append(cf.tiff_stack_2_np_arr(color))
-        yield name_pattern, tags_dict[name_pattern], channels
-        print row[3]
-        row[3] = 1
-        writer_check_tmp.writerow(row)
+    # for row in csv_reader:
+    #     name_pattern = row[0]
+    #     color_set = [row[1], row[2]]
+    #     if row[3] == 1:
+    #         writer_check_tmp.writerow(row)
+    #         continue
+    #     channels = []
+    #     for color in color_set:
+    #         channels.append(cf.tiff_stack_2_np_arr(color))
+    #     yield name_pattern, tags_dict[name_pattern], channels
+    #     print row[3]
+    #     row[3] = 1
+    #     writer_check_tmp.writerow(row)
 
 
+Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
 
-source = Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
-print source
-#
-#     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
-#     tags_dict = defaultdict(lambda: [])
-# #     using a dictionary instead of list since grouped by mutliple colors and may need to superimpose them
-# #     provide matching map based on translator (a dictionary with color codes and associated colors/dyes)
-#     image_list = {'B_1': [], 'B_2':[], 'B_3':[], 'B_4':[], 'B_5':[], 'B_6':[], 'B_7':[], 'C_2':[], 'C_3':[], 'C_4':[]}
-#
-#     for current_location, sub_directories, files in os.walk(main_root):
-#         if files:
-#             for img in files:
-#                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-#                     # img_codename = [img.split('.')[0]]   #linhao
-#                     prefix = cf.split_and_trim(current_location, main_root)
-#
-#                     img_codename = [img.split('.')[0]]
-#                     name_pattern = ' - '.join(prefix + img_codename)
-#                     print "prefix", prefix
-#                     print "img codename", img_codename
-#                     print "name pattern", name_pattern
-#                     group_by = img_codename[0][:2]
-#                     # grouping by color
-#                     print "group by", group_by
-#                     if name_pattern[-3::] in image_list:
-#                         image_list[name_pattern[-3::]].append(img_codename)
-#                     # project the three channels
-#                     color = group_by
-#                     # matched_images[name_pattern][color] = os.path.join(current_location, img)
-#                     print type(img)
-#             print image_list
-#
-#     for name_pattern, group_by, image_location in matched_images:
-#         print "reached for loop"
-#         print name_pattern
-#         stack = cf.tiff_stack_2_np_arr(image_location)
-#         stack = np.rollaxis(stack[0, :, :, :], 2)  # on the data where channels have not been split into z stacks
-#         channels = np.split(stack, stack.shape[0])
-#         channels = [chan[0, :, :] for chan in channels]
-#         pass
-# #     dont forget to add the csv/user input portion after this part is running smoothly
-# # need to add yield, but first fix matched images so it works properly
-# #
 
-# # C1 = DAPI, C2 = GFP, C3 = mCherry
+# # C1 = DAPI, C3 = GFP, C4 = mCherry
 
