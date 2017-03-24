@@ -5,4 +5,4 @@ This project is still in development. Initially started as a tool for Ruan, Zhou
 
 This project is currently in pre-alpha development, hence undocumentend, contains no unit tests and prone to rapid changes.
 
-Stay tuned for more information; if you want to use it, the Lince is MIT. 
+Stay tuned for more information; if you want to use it, the License is MIT. 
