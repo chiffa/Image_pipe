@@ -17,7 +17,7 @@ translator = {'w1488': 0,
 # source = uf.Linhao_traverse("L:\\Users\\jerry\\Image\\ForAndrei\\Ry233282285",
 #                             matching_map=translator)
 
-source = uf.Linhao_traverse("L:\\Users\\linghao\\Data for quantification\\Yeast\\NEW data for analysis",
+source = uf.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/SSAmutant",
                             matching_map=translator)
 
 # that architecture actually removes the need for the debug line
@@ -44,7 +44,7 @@ binarized_GFP = cf.robust_binarize(projected_mCh,
                                    out_channel='cell_tags')
 
 segmented_GFP = cf.improved_watershed(binarized_GFP,
-                                      in_channel='cell_tags',
+                                      in_channel=['cell_tags', 'projected_mCh'],
                                       out_channel='pre_cell_labels')
 
 qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
@@ -63,7 +63,6 @@ GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
 GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
                              in_channel=['pre_cell_labels', 'non_outliers'],
                              out_channel='kept_cells')
-
 GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
@@ -86,7 +85,7 @@ mito_3d_from_2d_mask = cf.for_each(segmented_mito, cf._3d_mask_from_2d_mask, 'pe
                                     in_channel=['mCherry', 'mito_labels'],
                                     out_channel='mito_labels_3d')
 
-# problem - mqvi does not seem to be working on an indifidual basis
+# problem - mqvi does not seem to be working on an individual basis
 
 GFP_AEQVI = cf.for_each(mito_3d_from_2d_mask, cf.volume_aqvi, 'per_cell',
                         in_channel=['GFP', 'mito_labels_3d'],

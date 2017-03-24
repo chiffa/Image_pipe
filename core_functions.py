@@ -182,6 +182,7 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
         else:
             for name_space in iterator:
+
                 local_args = (name_space,) + args
                 name_space = f(*local_args, **kwargs)
                 yield name_space
@@ -221,13 +222,13 @@ def splitter(outer_generator, to, sources, mask):
                                        (chan, len(primary_namespace[chan].shape)))
 
                 secondary_namespace[chan] = base_chan
-
         yield primary_namespace
 
 
 def for_each(outer_generator, embedded_transformer, inside, **kwargs):
 
     for primary_namespace in outer_generator:
+
         secondary_generator = embedded_transformer(pad_skipping_iterator(primary_namespace[inside]), **kwargs)
         for i, _ in enumerate(secondary_generator):  # forces secondary generator to evaluate
             pass
@@ -260,14 +261,15 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
         out_channel = in_anchor
 
     for primary_namespace in outer_generator:
+
         secondary_namespace = primary_namespace[based_on]
         mask = secondary_namespace['_pad'][1]
         mask_values = secondary_namespace['_pad'][0]
         accumulator = np.zeros_like(mask)
 
         for i, unique_value in enumerate(mask_values):
-            if i == 0:
-                accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
+
+            accumulator = accumulator.astype(secondary_namespace[unique_value][in_anchor].dtype)
             accumulator[mask == unique_value] = secondary_namespace[unique_value][in_anchor][mask == unique_value]
 
         primary_namespace[out_channel] = accumulator
@@ -328,7 +330,7 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
         raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
-
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return stabilized
 
 
@@ -338,7 +340,6 @@ def smooth(current_image, smoothing_px=1.5):
         current_image[i, :, :] = gaussian_filter(current_image[i, :, :],
                                                  smoothing_px, mode='constant')
         current_image[current_image < 5*np.mean(current_image)] = 0
-
     return current_image
 
 
@@ -346,17 +347,20 @@ def smooth(current_image, smoothing_px=1.5):
 def smooth_2d(current_image, smoothing_px=1.5):
     current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
     current_image[current_image < 5*np.mean(current_image)] = 0
-
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return current_image
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return np.sum(current_image, axis=0)
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def max_projection(current_image):
+    # dbg.max_projection_debug(np.max(current_image, axis=0))
+
     return np.max(current_image, axis=0)
 
 
@@ -381,7 +385,6 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
-    # print np.percentile(base_image, 99), np.sum(base_image)
     if np.percentile(base_image, 99) < 0.20:
         if np.percentile(base_image, 99) > 0:
             mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions
@@ -411,7 +414,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
     #                           binary_labels, uniform_median, uniform_median_otsu)
-
+    # dbg.robust_binarize_debug(base_image, binary_labels)
     return binary_labels
 
 
@@ -495,23 +498,41 @@ def in_contact(mask1, mask2, distance=10):
     return in_contact1, in_contact2
 
 
-@generator_wrapper(in_dims=(2,))
-def improved_watershed(binary_base):
+@generator_wrapper(in_dims=(2,2), out_dims=(2,))
+def improved_watershed(binary_base, intensity):
     sel_elem = disk(2)
-    labels = closing(binary_base, sel_elem)
 
-    distance = ndi.distance_transform_edt(labels)
+    # changed variable name for "labels"
+    post_closing_labels = closing(binary_base, sel_elem)
+
+    distance = ndi.distance_transform_edt(post_closing_labels)
     local_maxi = peak_local_max(distance,
                                 indices=False,  # we want the image mask, not peak position
                                 min_distance=10,  # about half of a bud with our size
                                 threshold_abs=10,  # allows to clear the noise
-                                labels=labels)
+                                labels=post_closing_labels)
     # we fuse the labels that are close together that escaped the min distance in local_maxi
     local_maxi = ndi.convolve(local_maxi, np.ones((5, 5)), mode='constant', cval=0.0)
     # finish the watershed
     expanded_maxi_markers = ndi.label(local_maxi, structure=np.ones((3, 3)))[0]
-    segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=labels)
+    segmented_cells_labels = watershed(-distance, expanded_maxi_markers, mask=post_closing_labels)
 
+
+
+    unique_segmented_cells_labels = np.unique(segmented_cells_labels)
+    unique_segmented_cells_labels = unique_segmented_cells_labels[1:]
+    average_apply_mask_list = []
+    for cell_label in unique_segmented_cells_labels:
+        my_mask = segmented_cells_labels == cell_label
+        apply_mask = segmented_cells_labels[my_mask]
+        average_apply_mask = np.mean(intensity[my_mask])
+        if average_apply_mask < 0.005:
+            average_apply_mask = 0
+            segmented_cells_labels[segmented_cells_labels == cell_label] = 0
+        average_apply_mask_list.append(average_apply_mask)
+    # x_labels = ['cell13', 'cell1', 'cell7', 'cell2', 'cell14', 'cell6', 'cell3', 'cell5', 'cell4', 'cell11', 'cell12', 'cell8', 'cell10', 'cell9']
+    # dbg.improved_watershed_debug(segmented_cells_labels, intensity)
+    # dbg.improved_watershed_plot_intensities(x_labels, average_apply_mask_list.sort())
     return segmented_cells_labels
 
 
@@ -597,18 +618,19 @@ def detect_upper_outliers(cells_average_gfp_list):
 
     non_outliers = arg_sort[np.array(cell_no)[np.array(predicted_average_gfp + std_err) >
                                                  np.array(cells_average_gfp_list)]]
-
     return non_outliers, predicted_average_gfp, std_err
 
 
 @generator_wrapper(in_dims=(2, 1), out_dims=(2,))
 def paint_mask(label_masks, labels_to_paint):
+
+    #label mask is GFP upper outlier cells
+
     mask_to_paint = np.zeros_like(label_masks).astype(np.uint8)
 
     if labels_to_paint.tolist() != np.array([]):
         for idx in labels_to_paint.tolist():
             mask_to_paint[label_masks == idx + 1] = 1  # indexing starts from 1, not 0 for the labels
-
     return mask_to_paint
 
 
@@ -616,6 +638,7 @@ def paint_mask(label_masks, labels_to_paint):
 def mask_filter_2d(base, _filter):
     ret_val = np.zeros_like(base)
     ret_val[_filter.astype(np.bool)] = base[_filter.astype(np.bool)]
+
     return ret_val
 
 
@@ -697,7 +720,7 @@ def agreeing_skeletons(float_surface, mito_labels):
 
     skeletons = np.zeros_like(medial_skeleton)
     skeletons[topological_skeleton] = skeleton_convolve[topological_skeleton]
-
+    # dbg.skeleton_debug(float_surface, mito_labels, skeletons)
     return skeletons
 
 
@@ -710,6 +733,8 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
     # are too small => we will need a filter on the label
 
     # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
+
+    # dbg.weight_sum_zero_debug(label_mask, skeletons)
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 
@@ -736,8 +761,12 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
         weights.append(px_radius)
 
     classification_roll = np.array(classification_roll)
-    weights = np.array(weights)
-
     final_classification = np.average(classification_roll, weights=weights)
 
+
     return final_classification, classification_mask, radius_mask, support_mask
+
+
+
+
+
