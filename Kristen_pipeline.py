@@ -109,6 +109,11 @@ projected_mCherry = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
 
+# which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
+# Next steps
+#     once pipeline is perceived to be finished, choose one image (i guess 3 superimposed images-for DAPI, GFP, mCherry) and run pipeline on
+#     add debug renders to see what exactly the pipeline is doing
+#     repeat this with other images until pipeline functions properly
 
 
 
@@ -130,7 +135,7 @@ running_render = rdr.Kristen_render(mCherry_en_eq,
                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
                                    out_channel='_',
                                    save=True)
-
+# why is the warning above showing up? (same exact formatting as in Akshay's pipeline)
 Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                            'nuc_mCherry', 'av_en_mCherry'],
                                out_channel='_',
