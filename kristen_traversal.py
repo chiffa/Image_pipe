@@ -123,9 +123,9 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
 #         plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
 #         plt.show()
 
-        # yield name_pattern, channels
-        # row[3] = 1
-        # writer_check_tmp.writerow(row)
+        yield name_pattern, channels
+        row[3] = 1
+        writer_check_tmp.writerow(row)
 
 translator = {'C1':0,
               'C3':1,

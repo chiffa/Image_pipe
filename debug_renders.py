@@ -83,7 +83,7 @@ def filter_labels_debug(labels, binary, result):
 
     plt.subplot(223, sharex=main_ax, sharey=main_ax)
     plt.title('result')
-    plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0),
+    plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0)
 
 
 

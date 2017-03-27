@@ -3,6 +3,7 @@ import core_functions as cf
 from matplotlib import pyplot as plt
 import render as rdr
 from csv import writer as csv_writer
+import Kristen_debug as dbg
 
 # Goal of this pipeline
 #     1. Detect the number of cells that were properly stained
@@ -20,6 +21,7 @@ named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
 stabilized_DAPI = cf.gamma_stabilize(named_source, in_channel='DAPI', min='min', alpha_clean=.5)
 smoothed_DAPI = cf.smooth_2d(stabilized_DAPI, in_channel='DAPI', smoothing_px=.5)
+# dbg.DAPI_debug(stabilized_DAPI, smoothed_DAPI)
 
 stabilized_GFP = cf.gamma_stabilize(smoothed_DAPI, in_channel='GFP', min='min', alpha_clean=.0)
 smoothed_GFP = cf.smooth_2d(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
@@ -122,29 +124,31 @@ projected_mCherry = cf.max_projection(projected_GFP,
 
 
 
-
-rdr.Kristen_render(mCherry_en_eq, in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
-                                               'nuclei', 'vor_segment',
-                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'], out_channel = '_', save=False)
-
-running_render = rdr.Kristen_render(mCherry_en_eq,
-                                   in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
-                                               'nuclei', 'vor_segment',
-                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
-                                   out_channel='_',
-                                   save=True)
-# why is the warning above showing up? (same exact formatting as in Akshay's pipeline)
-Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
-                                           'nuc_mCherry', 'av_en_mCherry'],
-                               out_channel='_',
-                               output='kristen_analysis_results.csv' )
-
-with open('Kristen_analysis_results.csv', 'wb') as output_file:
-    writer = csv_writer(output_file)
-    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
-                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
-
-for i, elt in enumerate(Kristen_summary):
-    print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
+#
+# rdr.Kristen_render(mCherry_en_eq, in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
+#                                                'nuclei', 'vor_segment',
+#                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+#                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'], out_channel = '_', save=False)
+#
+# running_render = rdr.Kristen_render(mCherry_en_eq,
+#                                    in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
+#                                                'nuclei', 'vor_segment',
+#                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+#                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
+#                                    out_channel='_',
+#                                    save=True)
+#
+#
+# # why is the warning above showing up? (same exact formatting as in Akshay's pipeline)
+# Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
+#                                            'nuc_mCherry', 'av_en_mCherry'],
+#                                out_channel='_',
+#                                output='kristen_analysis_results.csv' )
+#
+# with open('Kristen_analysis_results.csv', 'wb') as output_file:
+#     writer = csv_writer(output_file)
+#     writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
+#                      'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
+#
+# for i, elt in enumerate(Kristen_summary):
+#     print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
