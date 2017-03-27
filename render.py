@@ -230,6 +230,72 @@ def akshay_render(name_pattern, DAPI, p53, p21,
         plt.close()
 
 
+generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
+def Kristen_render(name_pattern, DAPI, p53, p21,
+                  nuclei, vor_segment,
+                  extra_nuclear_GFP, nuclear_GFP_pad, extranuclear_GFP_pad,
+                  extra_nuclear_mCherry, nuclear_mCherry_pad, extranuclear_mCherry_pad,
+                  save=False, directory_to_save_to='verification'):
+
+    plt.figure(figsize=(26.0, 15.0))
+    plt.suptitle(name_pattern)
+
+    main_ax = plt.subplot(231)
+    plt.title('DAPI')
+    plt.imshow(DAPI, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+
+    plt.subplot(232, sharex=main_ax, sharey=main_ax)
+    plt.title('p53')
+    plt.imshow(p53, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+
+    plt.subplot(233, sharex=main_ax, sharey=main_ax)
+    plt.title('p21')
+    plt.imshow(p21, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+
+    ax = plt.subplot(234, sharex=main_ax, sharey=main_ax)
+    plt.title('nuclei & Voronoi segmentation')
+    plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
+    plt.contour(nuclei, [0.5], colors='k')
+    unique = np.unique(vor_segment)
+    for i in unique:
+        mask = nuclei == i
+        x, y = scipy.ndimage.measurements.center_of_mass(mask)
+        ax.text(y-8, x+8, '%s' % i, fontsize=10)
+
+    plt.subplot(235, sharex=main_ax, sharey=main_ax)
+    plt.title('p53 nucleus/cell intensity')
+    p_53_summmary = np.zeros_like(nuclear_GFP_pad)
+    p_53_summmary[extranuclear_GFP_pad > 0] = extranuclear_GFP_pad[extranuclear_GFP_pad > 0]
+    p_53_summmary[nuclear_GFP_pad > 0] = nuclear_GFP_pad[nuclear_GFP_pad > 0]
+    im = plt.imshow(p_53_summmary, interpolation='nearest', cmap='hot')
+    plt.colorbar(im)
+    plt.contour(nuclei, [0.5], colors='b')
+    plt.contour(extra_nuclear_GFP, [0.5], colors='g')
+
+    plt.subplot(236, sharex=main_ax, sharey=main_ax)
+    plt.title('p21 nucleus/cell intensity')
+    p_21_summmary = np.zeros_like(nuclear_mCherry_pad)
+    p_21_summmary[extranuclear_mCherry_pad > 0] = extranuclear_mCherry_pad[extranuclear_mCherry_pad > 0]
+    p_21_summmary[nuclear_mCherry_pad > 0] = nuclear_mCherry_pad[nuclear_mCherry_pad > 0]
+    im = plt.imshow(p_21_summmary, interpolation='nearest', cmap='hot')
+    plt.colorbar(im)
+    plt.contour(nuclei, [0.5], colors='b')
+    plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
+
+    if not save:
+        plt.show()
+
+    else:
+        name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
+
+
 @generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))
 def akshay_summarize(name_pattern, group_by, av_nuc_p53, av_en_p53, av_nuc_p21, av_en_p21, output):
     with open(output, 'ab') as output_file:
@@ -271,7 +337,6 @@ def Kristen_summarize(primary_namespace, output):
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
         namespace = primary_namespace['name pattern']
-        # tag_group = primary_namespace['group id']
         total_cells = len(np.unique(primary_namespace['pre_cell_labels'])) - 1
         analyzed_cells = len(np.unique(primary_namespace['cell_labels'])) - 1
         writer.writerow([namespace]+ [total_cells, analyzed_cells])

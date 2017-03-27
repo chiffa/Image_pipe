@@ -27,17 +27,21 @@ smoothed_GFP = cf.smooth_2d(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
 stabilized_mCherry = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='5p', alpha_clean=.5)
 smoothed_mCherry = cf.smooth_2d(stabilized_mCherry, in_channel='p21', smoothing_px=.5)
 
+print "stabilization complete"
+
 binarized_nuclei = cf.robust_binarize(smoothed_mCherry,
                                       in_channel='DAPI',
                                       out_channel=['nuclei'],
                                       _dilation=0,
                                       heterogeity_size=5, feature_size=50)
+print "binarization of nucleus complete"
 segmented_nuclei = cf.label_and_correct(binarized_nuclei,
                                         in_channel=['nuclei', 'DAPI'],
                                         out_channel='nuclei',
                                         min_px_radius=15, min_intensity=20)
 
-
+print "segmentation of nuclei complete"
+# need segmentation of DAPI?
 # Segmentation of GFP
 GFP_aq =  cf.label_based_aq(segmented_nuclei,
                            in_channel=['nuclei', 'GFP'],
@@ -92,8 +96,50 @@ mCherry_o_n_filtered = cf.filter_labels(mCherry_seg_contacted,
                                     in_channel=['vor_segment', 'mCherry_o_n_seg'],
                                     out_channel=['extra_nuclear_mCherry'],
                                     min_feature_size=30)
-
 mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
                               in_channel=['extra_nuclear_mCherry', 'mCherry_o_n'],
                               out_channel=['av_en_mCherry', 'av_en_mCherry_pad'])
 
+# Derivation from Linhao's Pipeline
+projected_GFP = cf.sum_projection(stabilized_mCherry,
+                                  in_channel='GFP',
+                                  out_channel='projected_GFP')
+
+projected_mCherry = cf.max_projection(projected_GFP,
+                                  in_channel='mCherry',
+                                  out_channel='projected_mCh')
+
+
+
+
+
+
+
+
+
+
+rdr.Kristen_render(mCherry_en_eq, in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
+                                               'nuclei', 'vor_segment',
+                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'], out_channel = '_', save=False)
+
+running_render = rdr.Kristen_render(mCherry_en_eq,
+                                   in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
+                                               'nuclei', 'vor_segment',
+                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
+                                   out_channel='_',
+                                   save=True)
+
+Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
+                                           'nuc_mCherry', 'av_en_mCherry'],
+                               out_channel='_',
+                               output='kristen_analysis_results.csv' )
+
+with open('Kristen_analysis_results.csv', 'wb') as output_file:
+    writer = csv_writer(output_file)
+    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
+                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
+
+for i, elt in enumerate(Kristen_summary):
+    print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
