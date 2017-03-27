@@ -137,6 +137,11 @@ mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
                                     out_channel='_',
                                     save=True)
 
+# use mqvi render to unwrap the generator so you can plot the array in plt.imshow (also use gfp render?)
+# the portion of this pipeline needed for kristen's pipeline is basically everything except the mitochondria segmentation (up to per cell split)
+# add one by one and check each time to make sure pipeline is working instead of it crashing at the end which makes tracing the problem very difficult
+# akshay pipeline still not working: "Nonetype object is not iterable"
+
 mch_render = rdr.linhao_mch_render(mqvi_render,
                                         in_channel=['name pattern', 'projected_mCh', 'mito_binary',
                                              'mCh_skeleton', 'classification_mask', 'final_classification',

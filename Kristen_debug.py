@@ -23,7 +23,7 @@ def DAPI_debug(stabilized, smoothed):
 def nuclei_debug(binarized, segmented):
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle('DAPI Debug')
-
+    print binarized
 
     main_ax = plt.subplot(221)
     plt.title('binzarized nuclei')

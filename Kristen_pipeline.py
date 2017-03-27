@@ -43,7 +43,7 @@ segmented_nuclei = cf.label_and_correct(binarized_nuclei,
                                         min_px_radius=15, min_intensity=20)
 
 print "segmentation of nuclei complete"
-print type(segmented_nuclei)
+
 # dbg.nuclei_debug(binarized_nuclei, segmented_nuclei)
 
 
@@ -79,7 +79,7 @@ GFP_o_n_filtered = cf.filter_labels(GFP_seg_contacted,
 GFP_en_eq = cf.label_based_aq(GFP_o_n_filtered,
                               in_channel=['extra_nuclear_GFP','GFP_o_n'],
                               out_channel=['av_en_GFP', 'av_en_GFP_pad'])
-print type(GFP_en_eq)
+
 
 
 # Segmentation of mCherry
@@ -113,8 +113,7 @@ mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
 # Derivation from Linhao's Pipeline
 projected_GFP = cf.sum_projection(stabilized_mCherry,
                                   in_channel='GFP',
-                                  out_channel='projected_GFP')
-print type(projected_GFP)
+
 projected_mCherry = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
