@@ -21,7 +21,7 @@ named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
 stabilized_DAPI = cf.gamma_stabilize(named_source, in_channel='DAPI', min='min', alpha_clean=.5)
 smoothed_DAPI = cf.smooth_2d(stabilized_DAPI, in_channel='DAPI', smoothing_px=.5)
-# dbg.DAPI_debug(stabilized_DAPI, smoothed_DAPI)
+dbg.DAPI_debug(stabilized_DAPI, smoothed_DAPI)
 
 stabilized_GFP = cf.gamma_stabilize(smoothed_DAPI, in_channel='GFP', min='min', alpha_clean=.0)
 smoothed_GFP = cf.smooth_2d(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
@@ -43,7 +43,11 @@ segmented_nuclei = cf.label_and_correct(binarized_nuclei,
                                         min_px_radius=15, min_intensity=20)
 
 print "segmentation of nuclei complete"
-# need segmentation of DAPI?
+print type(segmented_nuclei)
+# dbg.nuclei_debug(binarized_nuclei, segmented_nuclei)
+
+
+
 # Segmentation of GFP
 GFP_aq =  cf.label_based_aq(segmented_nuclei,
                            in_channel=['nuclei', 'GFP'],
@@ -75,6 +79,8 @@ GFP_o_n_filtered = cf.filter_labels(GFP_seg_contacted,
 GFP_en_eq = cf.label_based_aq(GFP_o_n_filtered,
                               in_channel=['extra_nuclear_GFP','GFP_o_n'],
                               out_channel=['av_en_GFP', 'av_en_GFP_pad'])
+print type(GFP_en_eq)
+
 
 # Segmentation of mCherry
 mCherry_aq = cf.label_based_aq(GFP_en_eq,
@@ -102,11 +108,13 @@ mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
                               in_channel=['extra_nuclear_mCherry', 'mCherry_o_n'],
                               out_channel=['av_en_mCherry', 'av_en_mCherry_pad'])
 
+
+
 # Derivation from Linhao's Pipeline
 projected_GFP = cf.sum_projection(stabilized_mCherry,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
-
+print type(projected_GFP)
 projected_mCherry = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')

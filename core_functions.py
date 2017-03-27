@@ -330,7 +330,7 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
         raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
-    # dbg.max_projection_debug(np.max(current_image, axis=0))
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return stabilized
 
 
@@ -347,19 +347,19 @@ def smooth(current_image, smoothing_px=1.5):
 def smooth_2d(current_image, smoothing_px=1.5):
     current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
     current_image[current_image < 5*np.mean(current_image)] = 0
-    # dbg.max_projection_debug(np.max(current_image, axis=0))
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return current_image
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
-    # dbg.max_projection_debug(np.max(current_image, axis=0))
+    dbg.max_projection_debug(np.max(current_image, axis=0))
     return np.sum(current_image, axis=0)
 
 
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def max_projection(current_image):
-    # dbg.max_projection_debug(np.max(current_image, axis=0))
+    dbg.max_projection_debug(np.max(current_image, axis=0))
 
     return np.max(current_image, axis=0)
 
@@ -414,7 +414,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
     #                           binary_labels, uniform_median, uniform_median_otsu)
-    # dbg.robust_binarize_debug(base_image, binary_labels)
+    dbg.robust_binarize_debug(base_image, binary_labels)
     return binary_labels
 
 
@@ -423,7 +423,7 @@ def voronoi_segment_labels(binary_labels):
 
     dist = ndi.morphology.distance_transform_edt(np.logical_not(binary_labels))
     segmented_cells_labels = watershed(dist, binary_labels)
-    # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
+    dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
 
     return segmented_cells_labels
 
@@ -450,7 +450,7 @@ def filter_labels(labels, binary_mask, min_feature_size=10):
         if px_radius < min_feature_size:
             filtered_labels[labels == val] = labels[labels == val]
 
-    # dbg.filter_labels_debug(labels, binary_mask, filtered_labels)
+    dbg.filter_labels_debug(labels, binary_mask, filtered_labels)
 
     return filtered_labels
 
@@ -532,7 +532,7 @@ def improved_watershed(binary_base, intensity):
         average_apply_mask_list.append(average_apply_mask)
     # x_labels = ['cell13', 'cell1', 'cell7', 'cell2', 'cell14', 'cell6', 'cell3', 'cell5', 'cell4', 'cell11', 'cell12', 'cell8', 'cell10', 'cell9']
     # dbg.improved_watershed_debug(segmented_cells_labels, intensity)
-    # dbg.improved_watershed_plot_intensities(x_labels, average_apply_mask_list.sort())
+    dbg.improved_watershed_plot_intensities(x_labels, average_apply_mask_list.sort())
     return segmented_cells_labels
 
 
@@ -720,7 +720,7 @@ def agreeing_skeletons(float_surface, mito_labels):
 
     skeletons = np.zeros_like(medial_skeleton)
     skeletons[topological_skeleton] = skeleton_convolve[topological_skeleton]
-    # dbg.skeleton_debug(float_surface, mito_labels, skeletons)
+    dbg.skeleton_debug(float_surface, mito_labels, skeletons)
     return skeletons
 
 
@@ -734,7 +734,6 @@ def classify_fragmentation_for_mitochondria(label_mask, skeletons):
 
     # maybe it actually is a good idea to get the mask manipulation for all areas in the skeleton
 
-    # dbg.weight_sum_zero_debug(label_mask, skeletons)
     mask_items = np.unique(label_mask)
     mask_items = mask_items[mask_items > 0].tolist()
 

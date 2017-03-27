@@ -220,7 +220,6 @@ def akshay_render(name_pattern, DAPI, p53, p21,
     plt.colorbar(im)
     plt.contour(nuclei, [0.5], colors='b')
     plt.contour(extra_nuclear_p21, [0.5], colors='g')
-
     if not save:
         plt.show()
 

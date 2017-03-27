@@ -123,8 +123,6 @@ def max_projection_debug(current_image):
     plt.title('current')
     plt.imshow(current_image, interpolation='nearest', cmap=plt.cm.spectral)
 
-
-
 def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mask, support_mask, mito_classes, final_classes, cell_labels, name_pattern):
 
     cell_binary = cell_labels > 0
