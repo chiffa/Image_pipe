@@ -31,19 +31,11 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
                         img_codename = [img.split('.')[0]]
                         print img_codename[0].split(' ')[1:]
                         name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
-                        print "prefix", prefix
-                        print "img codename", img_codename
-                        print "name pattern", name_pattern, type(name_pattern)
                         group_by = img_codename[0][:2]
                         color = matching_map[img_codename[0].split('-')[0]]
-
-                        print "group by", group_by
-                        print "color", color, type(color)
                         matched_images[name_pattern][color] = os.path.join(current_location, img)
 
-    for key in matched_images:
-        print key
-        print matched_images[key]
+
 
     delset = []
 
@@ -114,27 +106,24 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
             writer_check_tmp.writerow(row)
             continue
         channels = []
-        print "color set", color_set
         plot_list = []
         for color in color_set:
-            print "color", color
             channels.append(cf.tiff_stack_2_np_arr(color))
             plot_list.append(cf.tiff_stack_2_np_arr(color))
 
-        plt.figure(figsize=(20.0, 15.0))
-        plt.suptitle('Projected DAPI. GFP, mCherry')
-        plt.title('DAPI')
-        dapi = np.max(plot_list[0], axis=0)
-        plt.imshow(dapi, interpolation='nearest', cmap='gray')
-        plt.title('GFP')
-        gfp = np.max(plot_list[1], axis=0)
-        plt.imshow(gfp, interpolation='nearest', cmap='gray')
-        mcherry = np.max(plot_list[2], axis=0)
-        plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
-        plt.show()
+#         plt.figure(figsize=(20.0, 15.0))
+#         plt.suptitle('Projected DAPI. GFP, mCherry')
+#         plt.title('DAPI')
+#         dapi = np.max(plot_list[0], axis=0)
+#         plt.imshow(dapi, interpolation='nearest', cmap='gray')
+#         plt.title('GFP')
+#         gfp = np.max(plot_list[1], axis=0)
+#         plt.imshow(gfp, interpolation='nearest', cmap='gray')
+#         mcherry = np.max(plot_list[2], axis=0)
+#         plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
+#         plt.show()
 
         yield name_pattern, channels
-        print row[3]
         row[3] = 1
         writer_check_tmp.writerow(row)
 
