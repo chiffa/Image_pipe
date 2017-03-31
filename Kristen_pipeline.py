@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import render as rdr
 from csv import writer as csv_writer
 import Kristen_debug as dbg
+import numpy as np
 
 # Goal of this pipeline
 #     1. Detect the number of cells that were properly stained
@@ -111,23 +112,64 @@ mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
 
 
 # Derivation from Linhao's Pipeline
-projected_GFP = cf.sum_projection(stabilized_mCherry,
-                                  in_channel='GFP',
+named_source = uf.name_channels(source, ['GFP', 'mCherry'])
+stabilized_GFP = cf.gamma_stabilize(named_source, in_channel = 'GFP')
+smoothed_GFP = cf.smooth(stabilized_GFP, in_channel = 'GFP')
+stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
 
-projected_mCherry = cf.max_projection(projected_GFP,
+projected_GFP = cf.sum_projection(stabilized_mCh,
+                                  in_channel='GFP',
+                                  out_channel='projected_GFP')
+
+projected_mCh = cf.max_projection(projected_GFP,
                                   in_channel='mCherry',
                                   out_channel='projected_mCh')
+
+
+binarized_GFP = cf.robust_binarize(projected_mCh,
+                                   in_channel='projected_mCh',
+                                   out_channel='cell_tags')
+
+segmented_GFP = cf.improved_watershed(binarized_GFP,
+                                      in_channel=['cell_tags', 'projected_mCh'],
+                                      out_channel='pre_cell_labels')
+
+qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
+                                   in_channel='projected_GFP',
+                                   out_channel='qualifying_GFP')
+
+average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
+                                   in_channel=['pre_cell_labels', 'projected_GFP', 'qualifying_GFP'],
+                                   out_channel=['average_GFP', 'average_GFP_pad'])
+
+GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
+                                                   in_channel='average_GFP',
+                                                   out_channel=['non_outliers', 'pred_gpf_av',
+                                                                'gfp_std'])
+
+GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
+                             in_channel=['pre_cell_labels', 'non_outliers'],
+                             out_channel='kept_cells')
+GFP_filtered = cf.mask_filter_2d(GFP_outliers,
+                                 in_channel=['pre_cell_labels', 'kept_cells'],
+                                 out_channel='cell_labels')
+
+rdr.akshay_render(mCherry_en_eq,
+                                   in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
+                                               'nuclei', 'vor_segment',
+                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
+                                   out_channel='_')
 
 # which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
 # Next steps
 #     once pipeline is perceived to be finished, choose one image (i guess 3 superimposed images-for DAPI, GFP, mCherry) and run pipeline on
 #     add debug renders to see what exactly the pipeline is doing
 #     repeat this with other images until pipeline functions properly
-
-
-
-
-
+# use mqvi render to unwrap the generator so you can plot the array in plt.imshow (also use gfp render?)
+# the portion of this pipeline needed for kristen's pipeline is basically everything except the mitochondria segmentation (up to per cell split)
+# add one by one and check each time to make sure pipeline is working instead of it crashing at the end which makes tracing the problem very difficult
+# akshay pipeline still not working: "Nonetype object is not iterable"
 
 
 

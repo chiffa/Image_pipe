@@ -48,7 +48,6 @@ def Linhao_traverse(main_root,
     """
     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
     tags_dict = defaultdict(lambda: [])
-
     if matching_rule:
         assert(matching_map is not None)
 

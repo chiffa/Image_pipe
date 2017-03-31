@@ -228,9 +228,8 @@ def akshay_render(name_pattern, DAPI, p53, p21,
         plt.savefig(name_puck)
         plt.close()
 
-
 generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
-def Kristen_render(name_pattern, DAPI, p53, p21,
+def Kristen_render(name_pattern, DAPI, GFP, mCherry,
                   nuclei, vor_segment,
                   extra_nuclear_GFP, nuclear_GFP_pad, extranuclear_GFP_pad,
                   extra_nuclear_mCherry, nuclear_mCherry_pad, extranuclear_mCherry_pad,
@@ -246,13 +245,13 @@ def Kristen_render(name_pattern, DAPI, p53, p21,
 
     plt.subplot(232, sharex=main_ax, sharey=main_ax)
     plt.title('p53')
-    plt.imshow(p53, interpolation='nearest')
+    plt.imshow(GFP, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
     plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 
     plt.subplot(233, sharex=main_ax, sharey=main_ax)
     plt.title('p21')
-    plt.imshow(p21, interpolation='nearest')
+    plt.imshow(mCherry, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
     plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 

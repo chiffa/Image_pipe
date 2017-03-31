@@ -97,7 +97,9 @@ running_render = rdr.akshay_render(p21_en_eq,
                                                'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad',
                                                'extra_nuclear_p21', 'nuc_p21_pad', 'av_en_p21_pad'],
                                    out_channel='_',
-                                   save=True)
+                                   save=False)
+
+# after checking this pipeline, replace False with True
 
 summary = rdr.akshay_summarize(running_render,
                                in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',

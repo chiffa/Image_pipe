@@ -10,9 +10,6 @@ from matplotlib import pyplot as plt
 def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
     print "starting kristen's traversal"
     matched_images = defaultdict(lambda: [''] * len(matching_map))
-    # reference: {name_pattern:[location of DAPI, location of GFP, location of mCherry]}
-    tags_dict = defaultdict(lambda: [])
-    # do we even need this? For linhao's case this was used to keep track of HS time
     name_pattern_list = []
     if matching_rule:
         assert (matching_map is not None)
@@ -130,7 +127,7 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
 translator = {'C1':0,
               'C3':1,
               'C4':2}
-Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei", matching_map=translator)
+# Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei", matching_map=translator)
 
 def name_channels(stack_group_generator, channel_names):
     """
