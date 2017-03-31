@@ -228,7 +228,26 @@ def akshay_render(name_pattern, DAPI, p53, p21,
         plt.savefig(name_puck)
         plt.close()
 
-generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
+
+@generator_wrapper(in_dims=2,out_dims=(None,))
+def Kristen_render_single_image(dapi, gfp, mcherry):
+    plt.figure(figsize=(26.0, 15.0))
+    plt.title('Max Projection')
+
+    plt.subplot(221)
+    plt.title('DAPI')
+    plt.imshow(dapi,interpolation='nearest')
+
+    plt.subplot(222)
+    plt.title('GFP')
+    plt.imshow(gfp, interpolation='nearest')
+
+    plt.subplot(221)
+    plt.title('mCherry')
+    plt.imshow(mcherry, interpolation='nearest')
+    plt.show()
+
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
 def Kristen_render(name_pattern, DAPI, GFP, mCherry,
                   nuclei, vor_segment,
                   extra_nuclear_GFP, nuclear_GFP_pad, extranuclear_GFP_pad,
@@ -236,6 +255,7 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
                   save=False, directory_to_save_to='verification'):
 
     plt.figure(figsize=(26.0, 15.0))
+    plt.title('Kristen\'s Data')
     plt.suptitle(name_pattern)
 
     main_ax = plt.subplot(231)
@@ -244,13 +264,13 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.contour(nuclei, [0.5], colors='k')
 
     plt.subplot(232, sharex=main_ax, sharey=main_ax)
-    plt.title('p53')
+    plt.title('GFP')
     plt.imshow(GFP, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
     plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 
     plt.subplot(233, sharex=main_ax, sharey=main_ax)
-    plt.title('p21')
+    plt.title('mCherry')
     plt.imshow(mCherry, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
     plt.contour(extra_nuclear_GFP, [0.5], colors='w')
@@ -266,21 +286,21 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
         ax.text(y-8, x+8, '%s' % i, fontsize=10)
 
     plt.subplot(235, sharex=main_ax, sharey=main_ax)
-    plt.title('p53 nucleus/cell intensity')
-    p_53_summmary = np.zeros_like(nuclear_GFP_pad)
-    p_53_summmary[extranuclear_GFP_pad > 0] = extranuclear_GFP_pad[extranuclear_GFP_pad > 0]
-    p_53_summmary[nuclear_GFP_pad > 0] = nuclear_GFP_pad[nuclear_GFP_pad > 0]
-    im = plt.imshow(p_53_summmary, interpolation='nearest', cmap='hot')
+    plt.title('GFP nucleus/cell intensity')
+    GFP_summmary = np.zeros_like(nuclear_GFP_pad)
+    GFP_summmary[extranuclear_GFP_pad > 0] = extranuclear_GFP_pad[extranuclear_GFP_pad > 0]
+    GFP_summmary[nuclear_GFP_pad > 0] = nuclear_GFP_pad[nuclear_GFP_pad > 0]
+    im = plt.imshow(GFP_summmary, interpolation='nearest', cmap='hot')
     plt.colorbar(im)
     plt.contour(nuclei, [0.5], colors='b')
     plt.contour(extra_nuclear_GFP, [0.5], colors='g')
 
     plt.subplot(236, sharex=main_ax, sharey=main_ax)
-    plt.title('p21 nucleus/cell intensity')
-    p_21_summmary = np.zeros_like(nuclear_mCherry_pad)
-    p_21_summmary[extranuclear_mCherry_pad > 0] = extranuclear_mCherry_pad[extranuclear_mCherry_pad > 0]
-    p_21_summmary[nuclear_mCherry_pad > 0] = nuclear_mCherry_pad[nuclear_mCherry_pad > 0]
-    im = plt.imshow(p_21_summmary, interpolation='nearest', cmap='hot')
+    plt.title('mCherry nucleus/cell intensity')
+    mCherry_summmary = np.zeros_like(nuclear_mCherry_pad)
+    mCherry_summmary[extranuclear_mCherry_pad > 0] = extranuclear_mCherry_pad[extranuclear_mCherry_pad > 0]
+    mCherry_summmary[nuclear_mCherry_pad > 0] = nuclear_mCherry_pad[nuclear_mCherry_pad > 0]
+    im = plt.imshow(mCherry_summmary, interpolation='nearest', cmap='hot')
     plt.colorbar(im)
     plt.contour(nuclei, [0.5], colors='b')
     plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
@@ -330,7 +350,7 @@ def linhao_secondary_summarize(primary_namespace, output):
 
     return primary_namespace
 
-@generator_wrapper
+@generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))
 def Kristen_summarize(primary_namespace, output):
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)

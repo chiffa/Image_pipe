@@ -3,7 +3,7 @@ import core_functions as cf
 from matplotlib import pyplot as plt
 import render as rdr
 from csv import writer as csv_writer
-import Kristen_debug as dbg
+import debug_renders as dbg
 import numpy as np
 
 # Goal of this pipeline
@@ -15,46 +15,64 @@ translator = {'C1':0,
               'C3':1,
               'C4':2}
 
-source = uf.Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
-
+source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei', matching_map=translator)
+print 'source', source
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
 
-stabilized_DAPI = cf.gamma_stabilize(named_source, in_channel='DAPI', min='min', alpha_clean=.5)
-smoothed_DAPI = cf.smooth_2d(stabilized_DAPI, in_channel='DAPI', smoothing_px=.5)
-dbg.DAPI_debug(stabilized_DAPI, smoothed_DAPI)
+# was DAPI the only one that was 3 dim, check for GFP and mCherry
+# stabilized_DAPI = cf.gamma_stabilize(named_source, in_channel = 'DAPI', min='min', alpha_clean=.5)
 
-stabilized_GFP = cf.gamma_stabilize(smoothed_DAPI, in_channel='GFP', min='min', alpha_clean=.0)
-smoothed_GFP = cf.smooth_2d(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
+# smoothed_DAPI = cf.smooth_2d(named_source, in_channel='DAPI', smoothing_px=.5)
 
-stabilized_mCherry = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='5p', alpha_clean=.5)
-smoothed_mCherry = cf.smooth_2d(stabilized_mCherry, in_channel='p21', smoothing_px=.5)
+# dbg.DAPI_debug(stabilized_DAPI, smoothed_DAPI)
+
+max_DAPI = cf.max_projection(named_source, in_channel = 'DAPI', out_channel = 'max_DAPI')
+# stabilized_GFP = cf.gamma_stabilize(smoothed_DAPI, in_channel='GFP', min='min', alpha_clean=.0)
+stabilized_DAPI = cf.gamma_stabilize(max_DAPI, in_channel = 'max_DAPI', min='min', alpha_clean=.5)
+smoothed_DAPI = cf.smooth_2d(stabilized_DAPI, in_channel = 'max_DAPI', smoothing_px = 0.5)
+
+
+# for smoothed_GFP can I use the following?
+max_GFP = cf.max_projection(smoothed_DAPI, in_channel = 'GFP', out_channel = 'max_GFP')
+# stabilized_GFP = cf.gamma_stabilize(smoothed_DAPI, in_channel='GFP', min='min', alpha_clean=.0)
+smoothed_GFP = cf.smooth_2d(max_GFP, in_channel = 'max_GFP', smoothing_px = .5)
+
+
+# smoothed_GFP = cf.smooth_2d(smoothed_DAPI, in_channel='GFP', smoothing_px=.5)
+
+
+
+# stabilized_mCherry = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='5p', alpha_clean=.5)
+# smoothed_mCherry = cf.smooth_2d(smoothed_GFP, in_channel='mCherry', smoothing_px=.5)
+max_mCherry = cf.max_projection(smoothed_GFP, in_channel = 'mCherry', out_channel = 'max_mCherry')
+# rdr.Kristen_render_single_image('max_DAPI', 'max_GFP', 'max_mCherry')
+# stabilized_mCherry = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='5p', alpha_clean=.5)
+smoothed_mCherry = cf.smooth_2d(max_mCherry, in_channel = 'max_mCherry', smoothing_px=.5)
 
 print "stabilization complete"
 
 binarized_nuclei = cf.robust_binarize(smoothed_mCherry,
-                                      in_channel='DAPI',
+                                      in_channel='max_DAPI',
                                       out_channel=['nuclei'],
                                       _dilation=0,
                                       heterogeity_size=5, feature_size=50)
 print "binarization of nucleus complete"
 segmented_nuclei = cf.label_and_correct(binarized_nuclei,
-                                        in_channel=['nuclei', 'DAPI'],
+                                        in_channel=['nuclei', 'max_DAPI'],
                                         out_channel='nuclei',
                                         min_px_radius=15, min_intensity=20)
 
 print "segmentation of nuclei complete"
 
-# dbg.nuclei_debug(binarized_nuclei, segmented_nuclei)
-
 
 
 # Segmentation of GFP
 GFP_aq =  cf.label_based_aq(segmented_nuclei,
-                           in_channel=['nuclei', 'GFP'],
+                           in_channel=['nuclei', 'max_GFP'],
                            out_channel=['av_GFP','av_GFP_pad'])
 GFP_o_n = cf.exclude_region(GFP_aq,
-                            in_channel=['nuclei', 'GFP'],
+                            in_channel=['nuclei', 'max_GFP'],
                             out_channel='GFP_o_n')
 
 vor_seg = cf.voronoi_segment_labels(GFP_o_n,
@@ -85,11 +103,11 @@ GFP_en_eq = cf.label_based_aq(GFP_o_n_filtered,
 
 # Segmentation of mCherry
 mCherry_aq = cf.label_based_aq(GFP_en_eq,
-                           in_channel=['nuclei', 'mCherry'],
+                           in_channel=['nuclei', 'max_mCherry'],
                            out_channel=['nuc_mCherry', 'nuc_mCherry_pad'])
 
 mCherry_o_n = cf.exclude_region(mCherry_aq,
-                            in_channel=['nuclei', 'mCherry'],
+                            in_channel=['nuclei', 'max_mCherry'],
                             out_channel='mCherry_o_n')
 
 mCherry_o_n_segmented = cf.robust_binarize(mCherry_o_n,
@@ -108,7 +126,18 @@ mCherry_o_n_filtered = cf.filter_labels(mCherry_seg_contacted,
 mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
                               in_channel=['extra_nuclear_mCherry', 'mCherry_o_n'],
                               out_channel=['av_en_mCherry', 'av_en_mCherry_pad'])
+running_render = rdr.Kristen_render(mCherry_en_eq,
+                                   in_channel=['name pattern', 'max_DAPI', 'max_GFP', 'max_mCherry',
+                                               'nuclei', 'vor_segment',
+                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
+                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
+                                   out_channel='_',
+                                   save=False)
 
+Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
+                                           'nuc_mCherry', 'av_en_mCherry'],
+                               out_channel='_',
+                               output='kristen_analysis_results.csv')
 
 
 # Derivation from Linhao's Pipeline
@@ -154,12 +183,6 @@ GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
 
-rdr.akshay_render(mCherry_en_eq,
-                                   in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
-                                               'nuclei', 'vor_segment',
-                                               'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-                                               'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
-                                   out_channel='_')
 
 # which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
 # Next steps
@@ -186,18 +209,12 @@ rdr.akshay_render(mCherry_en_eq,
 #                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
 #                                    out_channel='_',
 #                                    save=True)
-#
-#
-# # why is the warning above showing up? (same exact formatting as in Akshay's pipeline)
-# Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
-#                                            'nuc_mCherry', 'av_en_mCherry'],
-#                                out_channel='_',
-#                                output='kristen_analysis_results.csv' )
-#
-# with open('Kristen_analysis_results.csv', 'wb') as output_file:
-#     writer = csv_writer(output_file)
-#     writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
-#                      'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
-#
-# for i, elt in enumerate(Kristen_summary):
-#     print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
+
+
+with open('Kristen_analysis_results.csv', 'wb') as output_file:
+    writer = csv_writer(output_file)
+    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
+                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
+
+for i, elt in enumerate(Kristen_summary):
+    print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
