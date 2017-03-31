@@ -3,14 +3,7 @@ import core_functions as cf
 from collections import defaultdict
 import logging
 import os
-from pympler import  muppy, summary
 import csv
-
-
-
-
-all_objects = muppy.get_objects()
-print len(all_objects)
 
 
 logger = logging.getLogger('Default Debug Logger')
@@ -192,30 +185,50 @@ def Akshay_traverse(main_root):
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
 
-import numpy as np
-import core_functions as cf
-from collections import defaultdict
-import logging
-import os
 
+def xi_traverse(main_root, matching_map=None):
+    """
+    Traverses the main_root directory, looking for all the '.tif/.TIF' files, performs name matching
+    then iterates through the resulting matched dictironary.
 
-logger = logging.getLogger('Default Debug Logger')
-logger.setLevel(logging.DEBUG)
+    Matching assumption is that except for the matching keys, the names are identical
 
-fh = logging.FileHandler('debug_log.log')
-fh.setLevel(logging.DEBUG)
+    :param main_root: folder from which will be traversed in depth
+    :param matching_rule: name modification to type mapping. Currently '' for no matching, 'color' for colors
+    :param matching_map: {'pattern in the file name': color channel number}
+    :return:
+    """
+    matched_images = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+    tags_dict = defaultdict(lambda: [])
 
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+    assert(matching_map is not None)
 
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
+    for current_location, sub_directories, files in os.walk(main_root):
+        for img in files:
+            if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
+                prefix = cf.split_and_trim(current_location, main_root)
 
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
+                pre_name = '-'.join(img.split('-')[1:])[:-4]
+                print pre_name[-10:]
+                _time, _z = pre_name[-9:].split('_')
+                time_stamp = int(_time[1:])
+                z_position = int(_z[1:])
+                color = matching_map[img.split('-')[0]]
+                name_pattern = ' - '.join(prefix + [pre_name[:-10]])
+                matched_images[name_pattern][time_stamp][color][z_position] = os.path.join(current_location, img)
+                print name_pattern
+                print time_stamp, color, z_position
 
+    for name_pattern, time_dict in matched_images.iteritems():
+        for time_stamp, color_dict in time_dict.iteritems():
+            channels = ['', '']
+            for color, z_position_dict in color_dict.iteritems():
+                z_collector = []
+                for z_position, file_name in sorted(z_position_dict.items()):
+                    z_collector.append(cf.tiff_stack_2_np_arr(file_name))
+                channels[color] = np.array(z_collector)
+
+            yield name_pattern, str(time_stamp), channels
+
+    # TODO: we will need to perform z-stack assembly first, then color, then time
 
