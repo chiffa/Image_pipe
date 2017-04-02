@@ -305,12 +305,21 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.contour(nuclei, [0.5], colors='b')
     plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
 
+
+
     plt.figure()
     plt.title("GFP as a Function of Cell Number")
     plt.xlabel('Cell Number')
     plt.ylabel('GFP')
-    ax = plt.axes()
-    y = np.mean(nuclear_GFP_pad)
+    # ax = plt.axes()
+
+    cell_labels = np.unique(vor_segment)
+
+    
+    # y = np.mean(nuclear_GFP_pad)
+    y = nuclear_GFP_pad
+    # need to make new function "to create a pad for the element that has in addition what look like cells segments and
+    #     then use that pad nice"
     ax.plot(y)
 
 
