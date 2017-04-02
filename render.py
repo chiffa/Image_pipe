@@ -351,14 +351,11 @@ def linhao_secondary_summarize(primary_namespace, output):
     return primary_namespace
 
 @generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))
-def Kristen_summarize(primary_namespace, output):
+def Kristen_summarize_a(name_pattern, group_by, av_nuc_GFP, av_en_GFP, av_nuc_mCherry, av_en_mCherry, output):
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
-        namespace = primary_namespace['name pattern']
-        total_cells = len(np.unique(primary_namespace['pre_cell_labels'])) - 1
-        analyzed_cells = len(np.unique(primary_namespace['cell_labels'])) - 1
-        writer.writerow([namespace]+ [total_cells, analyzed_cells])
-
+        for i, nuc_pac in enumerate(zip(av_nuc_GFP, av_en_GFP, av_nuc_mCherry, av_en_mCherry)):
+            writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
 
 
 safe_dir_create('verification')

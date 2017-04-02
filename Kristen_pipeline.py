@@ -5,6 +5,7 @@ import render as rdr
 from csv import writer as csv_writer
 import debug_renders as dbg
 import numpy as np
+from time import time
 
 # Goal of this pipeline
 #     1. Detect the number of cells that were properly stained
@@ -132,12 +133,18 @@ running_render = rdr.Kristen_render(mCherry_en_eq,
                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
                                    out_channel='_',
-                                   save=False)
+                                   save=True)
 
-Kristen_summary = rdr.Kristen_summarize(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
+Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                            'nuc_mCherry', 'av_en_mCherry'],
                                out_channel='_',
-                               output='kristen_analysis_results.csv')
+                               output='Kristen_analysis_results_1.csv')
+
+
+with open('Kristen_analysis_results_1.csv', 'wb') as output_file:
+    writer = csv_writer(output_file, delimiter = '\t')
+    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
+                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
 
 
 # Derivation from Linhao's Pipeline
@@ -183,6 +190,48 @@ GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
 
+# insert transition between these two portion of the pipeline
+gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
+                                     in_channel=['name pattern',
+                                                 'projected_GFP', 'qualifying_GFP',
+                                                 'pre_cell_labels',
+                                                 'average_GFP_pad', 'average_GFP',
+                                                 'pred_gpf_av', 'gfp_std', 'non_outliers',
+                                                 'cell_labels', 'projected_mCh'],
+                                     out_channel='_',
+                                     save=True)
+
+mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
+                                    in_channel=['name pattern', 'mito_binary', 'cell_labels',
+                                                'projected_GFP', 'projected_mCh',
+                                                'gfp_mqvi', 'mch_mqvi'],
+                                    out_channel='_',
+                                    save=True)
+
+
+
+mch_render = rdr.linhao_mch_render(mqvi_render,
+                                        in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+                                             'mCh_skeleton', 'classification_mask', 'final_classification',
+                                             'cell_labels', 'radius_mask', 'support_mask'],
+                                        out_channel='_',
+                                        save=True)
+
+per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
+
+cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
+
+with open('linhao_analys_results.csv', 'wb') as output_file:
+        writer = csv_writer(output_file)
+        writer.writerow(['file', 'time in curve', 'date', 'cell type',
+                         'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
+
+
+with open('linhao_raw counts.csv', 'wb') as output_file:
+        writer = csv_writer(output_file)
+        writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected', 'cells analyzed'])
+
+prev_time = time()
 
 # which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
 # Next steps
@@ -210,11 +259,6 @@ GFP_filtered = cf.mask_filter_2d(GFP_outliers,
 #                                    out_channel='_',
 #                                    save=True)
 
-
-with open('Kristen_analysis_results.csv', 'wb') as output_file:
-    writer = csv_writer(output_file)
-    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
-                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
 
 for i, elt in enumerate(Kristen_summary):
     print 'operation %s analyzed group %s - image %s' % (i, elt['group id'], elt['name pattern'])
