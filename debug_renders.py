@@ -207,3 +207,15 @@ def improved_watershed_plot_intensities(unique_segmented_cell_labels, average_ap
     ax.plot(y)
     my_xticks = unique_segmented_cell_labels
     plt.xticks(x, my_xticks)
+
+def plot_GFP_as_a_function_of_cell_number(unique_segmented_cell_labels, average_apply_mask):
+    plt.figure()
+    plt.title("GFP as a Function of Cell Number")
+    plt.xlabel('Cell Number')
+    plt.ylabel('GFP')
+    ax = plt.axes()
+    x = np.array[1:33]
+    y = average_apply_mask
+    ax.plot(y)
+    my_xticks = unique_segmented_cell_labels
+    plt.xticks(x, my_xticks)

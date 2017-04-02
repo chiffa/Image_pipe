@@ -352,10 +352,13 @@ def linhao_secondary_summarize(primary_namespace, output):
 
 @generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))
 def Kristen_summarize_a(name_pattern, group_by, av_nuc_GFP, av_en_GFP, av_nuc_mCherry, av_en_mCherry, output):
+    print "GFP-nuclear, cellular", av_nuc_GFP, av_en_GFP
+    print 'mCherry-nuclear, cellular', av_nuc_mCherry, av_en_mCherry
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
         for i, nuc_pac in enumerate(zip(av_nuc_GFP, av_en_GFP, av_nuc_mCherry, av_en_mCherry)):
-            writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
+            if av_nuc_GFP > .005:
+                writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
 
 
 safe_dir_create('verification')

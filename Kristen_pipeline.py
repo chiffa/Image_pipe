@@ -191,47 +191,47 @@ GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  out_channel='cell_labels')
 
 # insert transition between these two portion of the pipeline
-gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
-                                     in_channel=['name pattern',
-                                                 'projected_GFP', 'qualifying_GFP',
-                                                 'pre_cell_labels',
-                                                 'average_GFP_pad', 'average_GFP',
-                                                 'pred_gpf_av', 'gfp_std', 'non_outliers',
-                                                 'cell_labels', 'projected_mCh'],
-                                     out_channel='_',
-                                     save=True)
-
-mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
-                                    in_channel=['name pattern', 'mito_binary', 'cell_labels',
-                                                'projected_GFP', 'projected_mCh',
-                                                'gfp_mqvi', 'mch_mqvi'],
-                                    out_channel='_',
-                                    save=True)
-
-
-
-mch_render = rdr.linhao_mch_render(mqvi_render,
-                                        in_channel=['name pattern', 'projected_mCh', 'mito_binary',
-                                             'mCh_skeleton', 'classification_mask', 'final_classification',
-                                             'cell_labels', 'radius_mask', 'support_mask'],
-                                        out_channel='_',
-                                        save=True)
-
-per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
-
-cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
-
-with open('linhao_analys_results.csv', 'wb') as output_file:
-        writer = csv_writer(output_file)
-        writer.writerow(['file', 'time in curve', 'date', 'cell type',
-                         'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
-
-
-with open('linhao_raw counts.csv', 'wb') as output_file:
-        writer = csv_writer(output_file)
-        writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected', 'cells analyzed'])
-
-prev_time = time()
+# gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
+#                                      in_channel=['name pattern',
+#                                                  'projected_GFP', 'qualifying_GFP',
+#                                                  'pre_cell_labels',
+#                                                  'average_GFP_pad', 'average_GFP',
+#                                                  'pred_gpf_av', 'gfp_std', 'non_outliers',
+#                                                  'cell_labels', 'projected_mCh'],
+#                                      out_channel='_',
+#                                      save=True)
+#
+# mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
+#                                     in_channel=['name pattern', 'mito_binary', 'cell_labels',
+#                                                 'projected_GFP', 'projected_mCh',
+#                                                 'gfp_mqvi', 'mch_mqvi'],
+#                                     out_channel='_',
+#                                     save=True)
+#
+#
+#
+# mch_render = rdr.linhao_mch_render(mqvi_render,
+#                                         in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+#                                              'mCh_skeleton', 'classification_mask', 'final_classification',
+#                                              'cell_labels', 'radius_mask', 'support_mask'],
+#                                         out_channel='_',
+#                                         save=True)
+#
+# per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
+#
+# cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
+#
+# with open('linhao_analys_results.csv', 'wb') as output_file:
+#         writer = csv_writer(output_file)
+#         writer.writerow(['file', 'time in curve', 'date', 'cell type',
+#                          'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
+#
+#
+# with open('linhao_raw counts.csv', 'wb') as output_file:
+#         writer = csv_writer(output_file)
+#         writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected', 'cells analyzed'])
+#
+# prev_time = time()
 
 # which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
 # Next steps
