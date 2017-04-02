@@ -133,7 +133,7 @@ running_render = rdr.Kristen_render(mCherry_en_eq,
                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
                                    out_channel='_',
-                                   save=True)
+                                   save=False)
 
 Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                            'nuc_mCherry', 'av_en_mCherry'],
@@ -189,6 +189,45 @@ GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
 GFP_filtered = cf.mask_filter_2d(GFP_outliers,
                                  in_channel=['pre_cell_labels', 'kept_cells'],
                                  out_channel='cell_labels')
+mito_3d_from_2d_mask = cf.for_each(GFP_filtered, cf._3d_mask_from_2d_mask, 'per_cell',
+                                    in_channel=['mCherry', 'mito_labels'],
+                                    out_channel='mito_labels_3d')
+
+# problem - mqvi does not seem to be working on an individual basis
+
+GFP_AEQVI = cf.for_each(mito_3d_from_2d_mask, cf.volume_aqvi, 'per_cell',
+                        in_channel=['GFP', 'mito_labels_3d'],
+                        out_channel='gfp_mqvi')
+
+MCH_AEQVI = cf.for_each(GFP_AEQVI, cf.volume_aqvi, 'per_cell',
+                        in_channel=['mCherry', 'mito_labels_3d'],
+                        out_channel='mch_mqvi')
+
+skeletonized = cf.for_each(MCH_AEQVI, cf.agreeing_skeletons, 'per_cell',
+                           in_channel=['projected_mCh', 'mito_binary'],
+                           out_channel='mCh_skeleton')
+
+classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
+                         in_channel=['mito_labels', 'mCh_skeleton'],
+                         out_channel=['final_classification', 'classification_mask',
+                                      'radius_mask', 'support_mask'])
+
+mito_tiled = cf.tile_from_mask(classified, 'per_cell', 'mito_binary')
+
+skeleton_tiled = cf.tile_from_mask(mito_tiled, 'per_cell', 'mCh_skeleton')
+
+classification_tiled = cf.tile_from_mask(skeleton_tiled, 'per_cell', 'classification_mask')
+
+cell_class_tiled = cf.paint_from_mask(classification_tiled, 'per_cell', 'final_classification')
+
+rad_mask_tiled = cf.tile_from_mask(cell_class_tiled, 'per_cell', 'radius_mask')
+
+supp_mask_tiled = cf.tile_from_mask(rad_mask_tiled, 'per_cell', 'support_mask')
+
+gfp_mqvi_tiled = cf.paint_from_mask(supp_mask_tiled, 'per_cell', 'gfp_mqvi')
+
+mch_mqvi_tiled = cf.paint_from_mask(gfp_mqvi_tiled, 'per_cell', 'mch_mqvi')
+
 
 # insert transition between these two portion of the pipeline
 # gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
