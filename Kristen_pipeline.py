@@ -139,11 +139,12 @@ Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel=['name patt
                                output='Kristen_analysis_results_1.csv')
 
 
-with open('Kristen_analysis_results_1.csv', 'wb') as output_file:
-    writer = csv_writer(output_file, delimiter = '\t')
-    writer.writerow(['file', 'group id', 'cell number', '   nuclear GFP',
-                     '  cellular GFP', '  nuclear mCherry', '   cellular mCherry'])
-# need more descriptive file names?
+# with open('Kristen_analysis_results_1.csv', 'wb') as output_file:
+#     writer = csv_writer(output_file, delimiter = '\t')
+#     writer.writerow(['file', 'group id', 'cell number', '   nuclear GFP',
+#                      '  cellular GFP', '  nuclear mCherry', '   cellular mCherry'])
+
+# Does this portion interfere with the pipeline?
 
 # Derivation from Linhao's Pipeline
 # named_source = uf.name_channels(source, ['GFP', 'mCherry'])
@@ -255,6 +256,11 @@ mch_render = rdr.linhao_mch_render(mqvi_render,
 per_cell_render = rdr.linhao_summarize(mch_render, output='Kristen_per_cell_render_results.csv')
 
 cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='Kristen_raw counts.csv')
+
+with open('Kristen_analysis_results_1.csv', 'wb') as output_file:
+    writer = csv_writer(output_file, delimiter = '\t')
+    writer.writerow(['file', 'group id', 'cell number', '   nuclear GFP',
+                     '  cellular GFP', '  nuclear mCherry', '   cellular mCherry'])
 
 with open('Kristen_per_cell_render_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file, delimiter = '\t')
