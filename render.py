@@ -279,6 +279,8 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.title('nuclei & Voronoi segmentation')
     plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
     plt.contour(nuclei, [0.5], colors='k')
+
+
     unique = np.unique(vor_segment)
     for i in unique:
         mask = nuclei == i
@@ -306,23 +308,44 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
 
 
+    unique_label = np.unique(vor_segment)
+    apply_mask_list = []
+    for cell_label in unique_label:
+        my_mask = vor_segment == cell_label
+        average_apply_mask = np.mean(GFP[my_mask])  #?not sure about this, need an intensity array
+        apply_mask_list.append(average_apply_mask)
 
     plt.figure()
     plt.title("GFP as a Function of Cell Number")
-    plt.xlabel('Cell Number')
-    plt.ylabel('GFP')
-    # ax = plt.axes()
+    plt.xlabel('Cell Number-based on color')
+    plt.ylabel('nuclear GFP')
 
-    cell_labels = np.unique(vor_segment)
+    print "apply mask list", apply_mask_list
+    x = np.arange(len(apply_mask_list))
+    print "x", x
+    y = apply_mask_list
+    plt.plot(y)
+    my_x_ticks = unique_label
 
-    
-    # y = np.mean(nuclear_GFP_pad)
-    y = nuclear_GFP_pad
+    # plt.xticks(x, my_x_ticks)
+    plt.show()
     # need to make new function "to create a pad for the element that has in addition what look like cells segments and
-    #     then use that pad nice"
-    ax.plot(y)
+    #     then use that pad instead"
 
+    plt.figure()
+    plt.title("GFP as a Function of Cell Number-sorted")
+    plt.xlabel('Cell Number-based on color')
+    plt.ylabel('nuclear GFP')
 
+    print "apply mask list", apply_mask_list
+    x = np.arange(len(apply_mask_list))
+    print "x", x
+    y = sorted(apply_mask_list)
+    plt.plot(y)
+    my_x_ticks = unique_label
+
+    # plt.xticks(x, my_x_ticks)
+    plt.show()
     if not save:
         plt.show()
 
@@ -375,7 +398,7 @@ def Kristen_summarize_a(name_pattern, group_by, av_nuc_GFP, av_en_GFP, av_nuc_mC
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
         for i, nuc_pac in enumerate(zip(av_nuc_GFP, av_en_GFP, av_nuc_mCherry, av_en_mCherry)):
-            if av_nuc_GFP[i] > .005:
+            if av_nuc_GFP[i] >= 0:
                 writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
 
 

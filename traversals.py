@@ -184,7 +184,6 @@ def Akshay_traverse(main_root):
                     prefix = cf.split_and_trim(current_location, main_root)
 
                     img_codename = [img.split('.')[0]]
-                    print img_codename
                     name_pattern = ' - '.join(prefix + img_codename)
                     group_by = img_codename[0].split('rpe')[1].split('dapi')[0].strip()
                     matched_images.append((name_pattern, group_by, os.path.join(current_location, img)))

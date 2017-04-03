@@ -17,7 +17,6 @@ translator = {'C1':0,
               'C4':2}
 
 source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei', matching_map=translator)
-print 'source', source
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
 
@@ -51,20 +50,18 @@ max_mCherry = cf.max_projection(smoothed_GFP, in_channel = 'mCherry', out_channe
 # stabilized_mCherry = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='5p', alpha_clean=.5)
 smoothed_mCherry = cf.smooth_2d(max_mCherry, in_channel = 'max_mCherry', smoothing_px=.5)
 
-print "stabilization complete"
 
 binarized_nuclei = cf.robust_binarize(smoothed_mCherry,
                                       in_channel='max_DAPI',
                                       out_channel=['nuclei'],
                                       _dilation=0,
                                       heterogeity_size=5, feature_size=50)
-print "binarization of nucleus complete"
+
 segmented_nuclei = cf.label_and_correct(binarized_nuclei,
                                         in_channel=['nuclei', 'max_DAPI'],
                                         out_channel='nuclei',
                                         min_px_radius=15, min_intensity=20)
 
-print "segmentation of nuclei complete"
 
 
 
@@ -133,7 +130,8 @@ running_render = rdr.Kristen_render(mCherry_en_eq,
                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
                                    out_channel='_',
-                                   save=False)
+                                   save=True)
+
 
 Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                            'nuc_mCherry', 'av_en_mCherry'],
@@ -143,17 +141,17 @@ Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel=['name patt
 
 with open('Kristen_analysis_results_1.csv', 'wb') as output_file:
     writer = csv_writer(output_file, delimiter = '\t')
-    writer.writerow(['file', 'group id', 'cell no', 'nuclear GFP',
-                     'cellular GFP', 'nuclear mCherry', 'cellular mCherry'])
-
+    writer.writerow(['file', 'group id', 'cell number', '   nuclear GFP',
+                     '  cellular GFP', '  nuclear mCherry', '   cellular mCherry'])
+# need more descriptive file names?
 
 # Derivation from Linhao's Pipeline
-named_source = uf.name_channels(source, ['GFP', 'mCherry'])
-stabilized_GFP = cf.gamma_stabilize(named_source, in_channel = 'GFP')
-smoothed_GFP = cf.smooth(stabilized_GFP, in_channel = 'GFP')
-stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
-
-projected_GFP = cf.sum_projection(stabilized_mCh,
+# named_source = uf.name_channels(source, ['GFP', 'mCherry'])
+# stabilized_GFP = cf.gamma_stabilize(named_source, in_channel = 'GFP')
+# smoothed_GFP = cf.smooth(stabilized_GFP, in_channel = 'GFP')
+# stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
+#already stabilized and smoothed (top of akshay's portion)
+projected_GFP = cf.sum_projection(Kristen_summary,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
 
@@ -227,50 +225,47 @@ supp_mask_tiled = cf.tile_from_mask(rad_mask_tiled, 'per_cell', 'support_mask')
 gfp_mqvi_tiled = cf.paint_from_mask(supp_mask_tiled, 'per_cell', 'gfp_mqvi')
 
 mch_mqvi_tiled = cf.paint_from_mask(gfp_mqvi_tiled, 'per_cell', 'mch_mqvi')
+print "gfp render"
+gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
+                                     in_channel=['name pattern',
+                                                 'projected_GFP', 'qualifying_GFP',
+                                                 'pre_cell_labels',
+                                                 'average_GFP_pad', 'average_GFP',
+                                                 'pred_gpf_av', 'gfp_std', 'non_outliers',
+                                                 'cell_labels', 'projected_mCh'],
+                                     out_channel='_',
+                                     save=False)
+
+mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
+                                    in_channel=['name pattern', 'mito_binary', 'cell_labels',
+                                                'projected_GFP', 'projected_mCh',
+                                                'gfp_mqvi', 'mch_mqvi'],
+                                    out_channel='_',
+                                    save=False)
 
 
-# insert transition between these two portion of the pipeline
-# gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
-#                                      in_channel=['name pattern',
-#                                                  'projected_GFP', 'qualifying_GFP',
-#                                                  'pre_cell_labels',
-#                                                  'average_GFP_pad', 'average_GFP',
-#                                                  'pred_gpf_av', 'gfp_std', 'non_outliers',
-#                                                  'cell_labels', 'projected_mCh'],
-#                                      out_channel='_',
-#                                      save=True)
-#
-# mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
-#                                     in_channel=['name pattern', 'mito_binary', 'cell_labels',
-#                                                 'projected_GFP', 'projected_mCh',
-#                                                 'gfp_mqvi', 'mch_mqvi'],
-#                                     out_channel='_',
-#                                     save=True)
-#
-#
-#
-# mch_render = rdr.linhao_mch_render(mqvi_render,
-#                                         in_channel=['name pattern', 'projected_mCh', 'mito_binary',
-#                                              'mCh_skeleton', 'classification_mask', 'final_classification',
-#                                              'cell_labels', 'radius_mask', 'support_mask'],
-#                                         out_channel='_',
-#                                         save=True)
-#
-# per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
-#
-# cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
-#
-# with open('linhao_analys_results.csv', 'wb') as output_file:
-#         writer = csv_writer(output_file)
-#         writer.writerow(['file', 'time in curve', 'date', 'cell type',
-#                          'cell no', 'gfp_mqvi', 'mch_mqvi', 'mito fragmentation'])
-#
-#
-# with open('linhao_raw counts.csv', 'wb') as output_file:
-#         writer = csv_writer(output_file)
-#         writer.writerow(['file', 'time in curve', 'date', 'cell type', 'cells detected', 'cells analyzed'])
-#
-# prev_time = time()
+
+mch_render = rdr.linhao_mch_render(mqvi_render,
+                                        in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+                                             'mCh_skeleton', 'classification_mask', 'final_classification',
+                                             'cell_labels', 'radius_mask', 'support_mask'],
+                                        out_channel='_',
+                                        save=False)
+
+per_cell_render = rdr.linhao_summarize(mch_render, output='Kristen_per_cell_render_results.csv')
+
+cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='Kristen_raw counts.csv')
+
+with open('Kristen_per_cell_render_results.csv', 'wb') as output_file:
+        writer = csv_writer(output_file, delimiter = '\t')
+        writer.writerow(['file', '  time in curve', '   date', '    cell type',
+                         '  cell no', ' gfp_mqvi', '    mch_mqvi', '    mito fragmentation'])
+
+
+with open('Kristen_raw counts.csv', 'wb') as output_file:
+        writer = csv_writer(output_file, delimiter = '\t')
+        writer.writerow(['file', '  time in curve', '   date', '    cell type', '   cells detected', '  cells analyzed'])
+
 
 # which variable from Linhao's pipeline represents the quantification of GFP Included in the volume encompassed by mCherry???
 # Next steps
@@ -281,22 +276,6 @@ mch_mqvi_tiled = cf.paint_from_mask(gfp_mqvi_tiled, 'per_cell', 'mch_mqvi')
 # the portion of this pipeline needed for kristen's pipeline is basically everything except the mitochondria segmentation (up to per cell split)
 # add one by one and check each time to make sure pipeline is working instead of it crashing at the end which makes tracing the problem very difficult
 # akshay pipeline still not working: "Nonetype object is not iterable"
-
-
-
-#
-# rdr.Kristen_render(mCherry_en_eq, in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
-#                                                'nuclei', 'vor_segment',
-#                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-#                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'], out_channel = '_', save=False)
-#
-# running_render = rdr.Kristen_render(mCherry_en_eq,
-#                                    in_channel=['name pattern', 'DAPI', 'GFP', 'mCherry',
-#                                                'nuclei', 'vor_segment',
-#                                                'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-#                                                'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
-#                                    out_channel='_',
-#                                    save=True)
 
 
 for i, elt in enumerate(Kristen_summary):

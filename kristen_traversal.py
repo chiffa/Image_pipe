@@ -9,12 +9,8 @@ from matplotlib import pyplot as plt
 
 def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
     print "starting kristen's traversal"
-    print 'main root', main_root
-    print 'matching map', matching_map
     matched_images = defaultdict(lambda: [''] * len(matching_map))
-    print len(matching_map)
-    print len(matched_images)
-    print 'matched images', matched_images
+
     # name_pattern_list = []
     if matching_rule:
         assert (matching_map is not None)
@@ -24,22 +20,30 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
                     if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
                         prefix = cf.split_and_trim(current_location, main_root)
                         img_codename = [img.split('.')[0]]
-                        print 'image codename', img_codename
 
 
 
-                        # choosing one image to work with
+                        # # choosing one image to work with
                         # c = img_codename[0].split('-')[0]
-                        # b = img_codename[0].split(' ')[-1]
+                        # b = img_codename[0].split(' ')[-1][0]
+                        # print c
+                        # print b
                         # if c == 'C1' and b[0] == 'B':
-
-
-                        name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
-                        group_by = img_codename[0][:2]
-                        color = matching_map[img_codename[0].split('-')[0]]
-                        # print matched_images[name_pattern][color]
-                        # print os.path.join(current_location, img)
-                        matched_images[name_pattern][color] = os.path.join(current_location, img)
+                        #     # change these conditions back to original to test all images
+                        #     print "found image"
+                        #
+                        #     name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
+                        #     group_by = img_codename[0][:2]
+                        #     color = matching_map[img_codename[0].split('-')[0]]
+                        #     # print matched_images[name_pattern][color]
+                        #     # print os.path.join(current_location, img)
+                        #     matched_images[name_pattern][color] = os.path.join(current_location, img)
+                    name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
+                    group_by = img_codename[0][:2]
+                    color = matching_map[img_codename[0].split('-')[0]]
+                    # print matched_images[name_pattern][color]
+                    # print os.path.join(current_location, img)
+                    matched_images[name_pattern][color] = os.path.join(current_location, img)
 
     # shift tab upper portion out/ placed inside for loop to study a single image but originally only inside the if(.TIF...)
 
@@ -61,12 +65,10 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
 
     if user_input_about_new_csv_file == '1':
         print "Preparing a new CSV file"
-        print matched_images, len(matched_images)
         initial_open = open("matched_images.csv", 'wb')
         # this is the file we need to save unless user provides input saying we can override it
         writer = csv.writer(initial_open, delimiter='\t')
         for key in matched_images:
-            print key
             writer.writerow([key] + matched_images[key] + [0])
         initial_open.close()
 
@@ -108,7 +110,6 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
 
     for row in csv_reader:
         name_pattern = row[0]
-        print name_pattern
         color_set = [row[1], row[2], row[3]]
         if row[3] == 1:
             writer_check_tmp.writerow(row)
@@ -148,14 +149,14 @@ def name_channels(stack_group_generator, channel_names):
     :param channel_names:
     :return:
     """
-    print 'STACK group generator', stack_group_generator
+
     for name_pattern, group_ids, channels in stack_group_generator:
         group_dict = {'name pattern': name_pattern,
                       'group id': group_ids}
         group_dict['channel list'] = channel_names
         for chan_name, chan in zip(channel_names, channels):
             group_dict[chan_name] = chan
-        print "group dict from name_channels function", group_dict
+
         yield group_dict
 
 # C1 = DAPI, C3 = GFP, C4 = mCherry
