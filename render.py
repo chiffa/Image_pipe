@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from core_functions import generator_wrapper, safe_dir_create
 from csv import writer as csv_writer
 import scipy
+# from mayavi import mlab
 
 
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2, 2), out_dims=(None,))
@@ -31,7 +32,7 @@ def linhao_gfp_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp
 
     ax = plt.subplot(244, sharex=main_ax, sharey=main_ax)
     plt.imshow(cell_labels, cmap=plt.cm.spectral, interpolation='nearest')
-    unique = np.unique(cell_labels)
+    unique = np.sort(np.unique(cell_labels))[1:]
     for i in unique:
         mask = cell_labels == i
         x, y = scipy.ndimage.measurements.center_of_mass(mask)
@@ -226,6 +227,53 @@ def akshay_render(name_pattern, DAPI, p53, p21,
 
     else:
         name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
+
+
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 3, 3, None), out_dims=(None,))
+def xi_pre_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp_pad, proj_mch,
+                  mch, gfp, timestamp,
+                  save=False, directory_to_save_to='verification'):
+
+    plt.figure(figsize=(20, 15))
+
+    plt.suptitle(name_pattern)
+
+    main_ax = plt.subplot(231)
+    plt.imshow(proj_gfp, interpolation='nearest')
+    plt.contour(cell_labels > 0, [0.5], colors='w')
+
+    plt.subplot(232, sharex=main_ax, sharey=main_ax)
+    plt.imshow(np.log(proj_gfp + np.min(proj_gfp[proj_gfp > 0])), cmap='hot', interpolation='nearest')
+    plt.contour(cell_labels > 0, [0.5], colors='w')
+
+    plt.subplot(233, sharex=main_ax, sharey=main_ax)
+    plt.imshow(qual_gfp, cmap='gray', interpolation='nearest')
+    plt.contour(cell_labels > 0, [0.5], colors='w')
+
+    ax = plt.subplot(234, sharex=main_ax, sharey=main_ax)
+    plt.imshow(cell_labels, cmap=plt.cm.spectral, interpolation='nearest')
+    unique = np.unique(cell_labels)
+    for i in unique:
+        mask = cell_labels == i
+        x, y = scipy.ndimage.measurements.center_of_mass(mask)
+        ax.text(y-8, x+8, '%s' % i, fontsize=10)
+
+    # plt.subplot(235, sharex=main_ax, sharey=main_ax)
+    # plt.imshow(average_gfp_pad, cmap='hot', interpolation='nearest')
+    # plt.colorbar()
+    # plt.contour(cell_labels > 0, [0.5], colors='w')
+
+    plt.subplot(236, sharex=main_ax, sharey=main_ax)
+    plt.imshow(proj_mch, interpolation='nearest')
+    plt.contour(cell_labels > 0, [0.5], colors='w')
+
+    if not save:
+        plt.show()
+
+    else:
+        name_puck = directory_to_save_to+'/'+'xi_pre_render-'+timestamp+'-'+name_pattern+'.png'
         plt.savefig(name_puck)
         plt.close()
 

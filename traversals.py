@@ -209,15 +209,15 @@ def xi_traverse(main_root, matching_map=None):
                 prefix = cf.split_and_trim(current_location, main_root)
 
                 pre_name = '-'.join(img.split('-')[1:])[:-4]
-                print pre_name[-10:]
+                # print pre_name[-10:]
                 _time, _z = pre_name[-9:].split('_')
                 time_stamp = int(_time[1:])
                 z_position = int(_z[1:])
                 color = matching_map[img.split('-')[0]]
                 name_pattern = ' - '.join(prefix + [pre_name[:-10]])
                 matched_images[name_pattern][time_stamp][color][z_position] = os.path.join(current_location, img)
-                print name_pattern
-                print time_stamp, color, z_position
+                # print name_pattern
+                # print time_stamp, color, z_position
 
     for name_pattern, time_dict in matched_images.iteritems():
         for time_stamp, color_dict in time_dict.iteritems():
@@ -225,10 +225,9 @@ def xi_traverse(main_root, matching_map=None):
             for color, z_position_dict in color_dict.iteritems():
                 z_collector = []
                 for z_position, file_name in sorted(z_position_dict.items()):
-                    z_collector.append(cf.tiff_stack_2_np_arr(file_name))
+                    z_collector.append(cf.tiff_stack_2_np_arr(file_name)[0, :, :])
                 channels[color] = np.array(z_collector)
 
             yield name_pattern, str(time_stamp), channels
 
-    # TODO: we will need to perform z-stack assembly first, then color, then time
 

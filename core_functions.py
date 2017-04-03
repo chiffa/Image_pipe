@@ -153,7 +153,6 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                         print chan, len(name_space[chan].shape), in_dims[i]
                         raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s'%
                                            (chan, len(name_space[chan].shape), in_dims[i]))
-
                     args_puck.append(name_space[chan])
 
                 local_args = tuple(args_puck) + args
@@ -498,7 +497,7 @@ def in_contact(mask1, mask2, distance=10):
     return in_contact1, in_contact2
 
 
-@generator_wrapper(in_dims=(2,2), out_dims=(2,))
+@generator_wrapper(in_dims=(2, 2), out_dims=(2,))
 def improved_watershed(binary_base, intensity):
     sel_elem = disk(2)
 
