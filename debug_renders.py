@@ -164,17 +164,17 @@ def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mas
     plt.contour(cell_binary, [0.5], colors='k')
 
 
-def robust_binarize_debug(base_image, binary_labels):
-    plt.figure(figsize=(20.0, 15.0))
-    plt.suptitle('robust binarize')
-
-    main_ax = plt.subplot(121)
-    plt.title('base image')
-    plt.imshow(base_image, interpolation='nearest', cmap=plt.cm.spectral)
-
-    plt.subplot(122, sharex=main_ax, sharey=main_ax)
-    plt.title('binary labels')
-    plt.imshow(binary_labels, interpolation='nearest', cmap='gray')
+# def robust_binarize_debug(base_image, binary_labels):
+#     plt.figure(figsize=(20.0, 15.0))
+#     plt.suptitle('robust binarize')
+#
+#     main_ax = plt.subplot(121)
+#     plt.title('base image')
+#     plt.imshow(base_image, interpolation='nearest', cmap=plt.cm.spectral)
+#
+#     plt.subplot(122, sharex=main_ax, sharey=main_ax)
+#     plt.title('binary labels')
+#     plt.imshow(binary_labels, interpolation='nearest', cmap='gray')
 
 
 def improved_watershed_debug(segmented_cells_labels, mcherry):

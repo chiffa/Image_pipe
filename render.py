@@ -5,6 +5,7 @@ from core_functions import generator_wrapper, safe_dir_create
 from csv import writer as csv_writer
 import scipy
 # from mayavi import mlab
+from chiffatools.dataviz import better2D_desisty_plot
 
 
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2, 2), out_dims=(None,))
@@ -241,18 +242,22 @@ def xi_pre_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp_pad
     plt.suptitle(name_pattern)
 
     main_ax = plt.subplot(231)
+    plt.title('GFP')
     plt.imshow(proj_gfp, interpolation='nearest')
     plt.contour(cell_labels > 0, [0.5], colors='w')
 
     plt.subplot(232, sharex=main_ax, sharey=main_ax)
+    plt.title('log-GFP')
     plt.imshow(np.log(proj_gfp + np.min(proj_gfp[proj_gfp > 0])), cmap='hot', interpolation='nearest')
     plt.contour(cell_labels > 0, [0.5], colors='w')
 
     plt.subplot(233, sharex=main_ax, sharey=main_ax)
+    plt.title('raw segmentation')
     plt.imshow(qual_gfp, cmap='gray', interpolation='nearest')
     plt.contour(cell_labels > 0, [0.5], colors='w')
 
     ax = plt.subplot(234, sharex=main_ax, sharey=main_ax)
+    plt.title('labeled segmentation')
     plt.imshow(cell_labels, cmap=plt.cm.spectral, interpolation='nearest')
     unique = np.unique(cell_labels)
     for i in unique:
@@ -260,12 +265,20 @@ def xi_pre_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp_pad
         x, y = scipy.ndimage.measurements.center_of_mass(mask)
         ax.text(y-8, x+8, '%s' % i, fontsize=10)
 
+    plt.subplot(235)
+    plt.title('mCh-GFP correlation')
+    selector = np.logical_and(mch > 0, gfp > 0)
+    better2D_desisty_plot(mch[selector], gfp[selector])
+    plt.xlabel('mCherry')
+    plt.ylabel('GFP')
+
     # plt.subplot(235, sharex=main_ax, sharey=main_ax)
     # plt.imshow(average_gfp_pad, cmap='hot', interpolation='nearest')
     # plt.colorbar()
     # plt.contour(cell_labels > 0, [0.5], colors='w')
 
     plt.subplot(236, sharex=main_ax, sharey=main_ax)
+    plt.title('mCherry')
     plt.imshow(proj_mch, interpolation='nearest')
     plt.contour(cell_labels > 0, [0.5], colors='w')
 

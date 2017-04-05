@@ -9,6 +9,9 @@ translator = {'C2': 0,
               'C1': 1
               }
 
+# source = uf.xi_traverse('L:\\Users\\xi\\Quantification of colocalization',
+#                         matching_map=translator)
+
 source = uf.xi_traverse('L:\\Users\\andrei\\2017\\Xi Data',
                         matching_map=translator)
 
@@ -22,7 +25,15 @@ stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='min
 
 smoothed_mCh = cf.smooth(stabilized_mCh, in_channel='mCherry', smoothing_px=.5)
 
-projected_GFP = cf.max_projection(smoothed_mCh,
+med_norm_GFP = cf.locally_normalize(smoothed_mCh,
+                                    in_channel='GFP',
+                                    )
+
+med_norm_mCh = cf.locally_normalize(med_norm_GFP,
+                                    in_channel='mCherry',
+                                    )
+
+projected_GFP = cf.max_projection(med_norm_mCh,
                                   in_channel='GFP',
                                   out_channel='projected_GFP')
 
@@ -32,17 +43,16 @@ projected_mCh = cf.max_projection(projected_GFP,
 
 
 binarized_GFP = cf.robust_binarize(projected_mCh,
-                                   in_channel='projected_mCh',
+                                   in_channel='projected_GFP',
                                    out_channel='cell_tags',
                                    heterogeity_size=5,
-                                   feature_size=10,
+                                   feature_size=70,
                                    )
-
-# median_normalized
 
 segmented_GFP = cf.improved_watershed(binarized_GFP,
                                       in_channel=['cell_tags', 'projected_mCh'],
-                                      out_channel='pre_cell_labels')
+                                      out_channel='pre_cell_labels',
+                                      expected_separation=100)
 
 qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
                                    in_channel='projected_GFP',
@@ -53,13 +63,13 @@ average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
                                    out_channel=['average_GFP', 'average_GFP_pad'])
 
 pre_render = rdr.xi_pre_render(average_GFP,
-                                 in_channel=['name pattern',
-                                             'projected_GFP', 'qualifying_GFP',
-                                             'pre_cell_labels',
-                                             'average_GFP_pad', 'projected_mCh',
-                                             'mCherry', 'GFP', 'group id'],
-                                 out_channel='_',
-                                 save=False)
+                                in_channel=['name pattern',
+                                         'projected_GFP', 'qualifying_GFP',
+                                         'pre_cell_labels',
+                                         'average_GFP_pad', 'projected_mCh',
+                                         'mCherry', 'GFP', 'group id'],
+                                out_channel='_',
+                                save=False)
 
 prev_time = time()
 
