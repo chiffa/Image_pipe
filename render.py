@@ -311,7 +311,6 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.contour(nuclei, [0.5], colors='b')
     plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
 
-
     unique_label = np.unique(vor_segment)
     cell_area_list = []
     apply_mask_list = []
@@ -319,81 +318,76 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     for cell_label in unique_label:
         my_mask = vor_segment == cell_label
         average_apply_mask = np.mean(GFP[my_mask])
-        if average_apply_mask >0.4:
+        if average_apply_mask > 0.4:
             vor_segment_qualifying[my_mask] = 1
             apply_mask_list.append(average_apply_mask)
-            cell_area_list.append(cell_label)
+
 
     average_list = []
     average_pad = np.zeros_like(unique_label).astype(np.float32)
+    vor_segment_qualifying_2 = np.zeros_like(vor_segment)
+    for i in range(1, np.max(unique_label) + 1): #unique_label consists of all unique cell labels in vor_seg
+        current_mask = unique_label == i #creating mask where specific label used is equal to i
+        average_apply_mask_2 = np.average(GFP[current_mask])
+        if average_apply_mask > 0.4:
+            values_in_field = GFP[current_mask] #apply the mask to the field of interest, which in this case is GFP since we're testing which segments meet the cutoff value
+        if len(values_in_field) == 0:
+            continue
+        _average = np.average(values_in_field)
+        average_list.append(_average)
+        average_pad[current_mask] = _average
+
+
+    average_list_mCherry = []
+    average_pad_mCherry = np.zeros_like(unique_label).astype(np.float32)
+    values_in_field = None
 
     for i in range(1, np.max(unique_label) + 1):
 
         current_mask = unique_label == i
-        values_in_field = GFP[current_mask]
+        values_in_field = mCherry[current_mask]
 
         if len(values_in_field) == 0:
             continue
 
         _average = np.average(values_in_field)
-        average_list.append(_average)
-        average_pad[current_mask] = _average
+        average_list_mCherry.append(_average)
+        average_pad_mCherry[current_mask] = _average
 
-    # for i in vor_segment:
-    #     for cell in cell_area_list:
-    #         if vor_segment[i] == cell:
-    #             vor_segment[i] = 1
-    #         else:
-    #             vor_segment[i] = 0
-    print "gfp", GFP, GFP.shape
-    print
-    print
-    print
-    print
-    print "mcherry", mCherry
-    reference_index_list = []
-
-    print vor_segment
-
-
-
-    # for cell in cell_area_list:
-    #     if vor_segment.any == cell:
-    #         vor_segment.any = 1
-    #     else:
-    #         vor_segment.any = 0
-    # print vor_segment
-    # reference_index_list = []
-    # for i in vor_segment:
-    #     if vor_segment[i] != 0:
-    #         reference_index_list.append(i)
-    # for i in GFP:
-    #     for j in reference_index_list:
-    #         if i != j:
-    #             GFP[i] = 0
-    # for i in mCherry:
-    #     for j in reference_index_list:
-    #         if i!= j:
-    #             GFP[i] = 0
 
     plt.figure()
     plt.subplot(221)
     plt.title("GFP as a Function of Cell Number-sorted")
     plt.xlabel('Cell Number-based on color')
-    plt.ylabel('nuclear GFP')
+    plt.ylabel('enuclear GFP')
     y = sorted(average_list)
     plt.plot(y)
 
-    plt.subplot(222, sharex=main_ax, sharey=main_ax)
-    plt.title('nuclei & Voronoi segmentation')
-    plt.imshow(vor_segment_qualifying, interpolation='nearest', cmap='spectral', vmin=0)
-    plt.contour(nuclei, [0.5], colors='k')
+
+    plt.subplot(222)
+    plt.title("mCherry as a Function of Cell Number-sorted")
+    plt.xlabel('Cell Number-based on color')
+    plt.ylabel('mCherry')
+    y = sorted(average_list_mCherry)
+    plt.plot(y)
 
     plt.subplot(223, sharex=main_ax, sharey=main_ax)
     plt.title('GFP')
-    plt.imshow(GFP, interpolation='nearest')
+    plt.imshow(vor_segment_qualifying, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
-    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+
+    plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    plt.title('GFP')
+    plt.imshow(values_in_field, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+
+
+
+    # plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    # plt.title('GFP')
+    # plt.imshow(GFP, interpolation='nearest')
+    # plt.contour(nuclei, [0.5], colors='k')
+    # plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 
     plt.subplot(224, sharex=main_ax, sharey=main_ax)
     plt.title('mCherry')
