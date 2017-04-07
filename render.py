@@ -6,6 +6,7 @@ from csv import writer as csv_writer
 import scipy
 
 
+
 @generator_wrapper(in_dims=(None, 2, 2, 2, 2, 1, 1, None, None, 2, 2), out_dims=(None,))
 def linhao_gfp_render(name_pattern, proj_gfp, qual_gfp, cell_labels, average_gfp_pad, average_gfp_list,
                       predicted_average, std_err, upper_outliers, gfp_outliers, proj_mch,
@@ -245,14 +246,25 @@ def Kristen_render_single_image(dapi, gfp, mcherry):
     plt.subplot(221)
     plt.title('mCherry')
     plt.imshow(mcherry, interpolation='nearest')
-    plt.show()
 
-@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
-def Kristen_render(name_pattern, DAPI, GFP, mCherry,
-                  nuclei, vor_segment,
-                  extra_nuclear_GFP, nuclear_GFP_pad, extranuclear_GFP_pad,
-                  extra_nuclear_mCherry, nuclear_mCherry_pad, extranuclear_mCherry_pad,
-                  save=False, directory_to_save_to='verification'):
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
+def Kristen_render(name_pattern,
+                   DAPI,
+                   GFP,
+                   mCherry,
+                   nuclei,
+                   nuclear_GFP_pad,
+                   nuclear_mCherry_pad,
+                   extranuclear_mCherry_pad,
+                   save=False, directory_to_save_to='verification'):
+
+    # previous parameters
+    # (name_pattern, DAPI, GFP, mCherry,
+    #  nuclei, vor_segment,
+    #  extra_nuclear_GFP, nuclear_GFP_pad, extranuclear_GFP_pad,
+    #  extra_nuclear_mCherry, nuclear_mCherry_pad, extranuclear_mCherry_pad,
+    #  save = False, directory_to_save_to = 'verification'):
+
 
     plt.figure(figsize=(26.0, 15.0))
     plt.title('Kristen\'s Data')
@@ -263,45 +275,45 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     plt.imshow(DAPI, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
 
-    plt.subplot(232, sharex=main_ax, sharey=main_ax)
-    plt.title('GFP')
-    plt.imshow(GFP, interpolation='nearest')
-    plt.contour(nuclei, [0.5], colors='k')
-    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+    # plt.subplot(232, sharex=main_ax, sharey=main_ax)
+    # plt.title('GFP')
+    # plt.imshow(GFP, interpolation='nearest')
+    # plt.contour(nuclei, [0.5], colors='k')
+    # plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 
-    plt.subplot(233, sharex=main_ax, sharey=main_ax)
+    plt.subplot(232, sharex=main_ax, sharey=main_ax)
     plt.title('mCherry')
     plt.imshow(mCherry, interpolation='nearest')
     plt.contour(nuclei, [0.5], colors='k')
-    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+    # plt.contour(extra_nuclear_GFP, [0.5], colors='w')
 
-    ax = plt.subplot(234, sharex=main_ax, sharey=main_ax)
-    plt.title('nuclei & Voronoi segmentation')
-    plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
-    plt.contour(nuclei, [0.5], colors='k')
-
-
+    # ax = plt.subplot(234, sharex=main_ax, sharey=main_ax)
+    # plt.title('nuclei & Voronoi segmentation')
+    # plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
+    # plt.contour(nuclei, [0.5], colors='k')
 
 
 
 
-    unique = np.unique(vor_segment)
-    for i in unique:
-        mask = nuclei == i
-        x, y = scipy.ndimage.measurements.center_of_mass(mask)
-        ax.text(y-8, x+8, '%s' % i, fontsize=10)
 
-    plt.subplot(235, sharex=main_ax, sharey=main_ax)
-    plt.title('GFP nucleus/cell intensity')
-    GFP_summmary = np.zeros_like(nuclear_GFP_pad)
-    GFP_summmary[extranuclear_GFP_pad > 0] = extranuclear_GFP_pad[extranuclear_GFP_pad > 0]
-    GFP_summmary[nuclear_GFP_pad > 0] = nuclear_GFP_pad[nuclear_GFP_pad > 0]
-    im = plt.imshow(GFP_summmary, interpolation='nearest', cmap='hot')
-    plt.colorbar(im)
-    plt.contour(nuclei, [0.5], colors='b')
-    plt.contour(extra_nuclear_GFP, [0.5], colors='g')
 
-    plt.subplot(236, sharex=main_ax, sharey=main_ax)
+    # unique = np.unique(vor_segment)
+    # for i in unique:
+    #     mask = nuclei == i
+    #     x, y = scipy.ndimage.measurements.center_of_mass(mask)
+    #     ax.text(y-8, x+8, '%s' % i, fontsize=10)
+    #
+    # plt.subplot(235, sharex=main_ax, sharey=main_ax)
+    # plt.title('GFP nucleus/cell intensity')
+    # GFP_summmary = np.zeros_like(nuclear_GFP_pad)
+    # GFP_summmary[extranuclear_GFP_pad > 0] = extranuclear_GFP_pad[extranuclear_GFP_pad > 0]
+    # GFP_summmary[nuclear_GFP_pad > 0] = nuclear_GFP_pad[nuclear_GFP_pad > 0]
+    # im = plt.imshow(GFP_summmary, interpolation='nearest', cmap='hot')
+    # plt.colorbar(im)
+    # plt.contour(nuclei, [0.5], colors='b')
+    # plt.contour(extra_nuclear_GFP, [0.5], colors='g')
+    #
+    plt.subplot(233, sharex=main_ax, sharey=main_ax)
     plt.title('mCherry nucleus/cell intensity')
     mCherry_summmary = np.zeros_like(nuclear_mCherry_pad)
     mCherry_summmary[extranuclear_mCherry_pad > 0] = extranuclear_mCherry_pad[extranuclear_mCherry_pad > 0]
@@ -309,92 +321,93 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
     im = plt.imshow(mCherry_summmary, interpolation='nearest', cmap='hot')
     plt.colorbar(im)
     plt.contour(nuclei, [0.5], colors='b')
-    plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
-
-    unique_label = np.unique(vor_segment)
-    cell_area_list = []
-    apply_mask_list = []
-    vor_segment_qualifying = np.zeros_like(vor_segment)
-    for cell_label in unique_label:
-        my_mask = vor_segment == cell_label
-        average_apply_mask = np.mean(GFP[my_mask])
-        if average_apply_mask > 0.4:
-            vor_segment_qualifying[my_mask] = 1
-            apply_mask_list.append(average_apply_mask)
-
-
-    average_list = []
-    average_pad = np.zeros_like(unique_label).astype(np.float32)
-    vor_segment_qualifying_2 = np.zeros_like(vor_segment)
-    for i in range(1, np.max(unique_label) + 1): #unique_label consists of all unique cell labels in vor_seg
-        current_mask = unique_label == i #creating mask where specific label used is equal to i
-        average_apply_mask_2 = np.average(GFP[current_mask])
-        if average_apply_mask > 0.4:
-            values_in_field = GFP[current_mask] #apply the mask to the field of interest, which in this case is GFP since we're testing which segments meet the cutoff value
-        if len(values_in_field) == 0:
-            continue
-        _average = np.average(values_in_field)
-        average_list.append(_average)
-        average_pad[current_mask] = _average
-
-
-    average_list_mCherry = []
-    average_pad_mCherry = np.zeros_like(unique_label).astype(np.float32)
-    values_in_field = None
-
-    for i in range(1, np.max(unique_label) + 1):
-
-        current_mask = unique_label == i
-        values_in_field = mCherry[current_mask]
-
-        if len(values_in_field) == 0:
-            continue
-
-        _average = np.average(values_in_field)
-        average_list_mCherry.append(_average)
-        average_pad_mCherry[current_mask] = _average
-
-
-    plt.figure()
-    plt.subplot(221)
-    plt.title("GFP as a Function of Cell Number-sorted")
-    plt.xlabel('Cell Number-based on color')
-    plt.ylabel('enuclear GFP')
-    y = sorted(average_list)
-    plt.plot(y)
-
-
-    plt.subplot(222)
-    plt.title("mCherry as a Function of Cell Number-sorted")
-    plt.xlabel('Cell Number-based on color')
-    plt.ylabel('mCherry')
-    y = sorted(average_list_mCherry)
-    plt.plot(y)
-
-    plt.subplot(223, sharex=main_ax, sharey=main_ax)
-    plt.title('GFP')
-    plt.imshow(vor_segment_qualifying, interpolation='nearest')
-    plt.contour(nuclei, [0.5], colors='k')
-
-    plt.subplot(224, sharex=main_ax, sharey=main_ax)
-    plt.title('GFP')
-    plt.imshow(values_in_field, interpolation='nearest')
-    plt.contour(nuclei, [0.5], colors='k')
-
-
-
+    plt.show()
+    # plt.contour(extra_nuclear_mCherry, [0.5], colors='g')
+    #
+    # unique_label = np.unique(vor_segment)
+    # cell_area_list = []
+    # apply_mask_list = []
+    # vor_segment_qualifying = np.zeros_like(vor_segment)
+    # for cell_label in unique_label:
+    #     my_mask = vor_segment == cell_label
+    #     average_apply_mask = np.mean(GFP[my_mask])
+    #     if average_apply_mask > 0.4:
+    #         vor_segment_qualifying[my_mask] = 1
+    #         apply_mask_list.append(average_apply_mask)
+    #
+    #
+    # average_list = []
+    # average_pad = np.zeros_like(unique_label).astype(np.float32)
+    # vor_segment_qualifying_2 = np.zeros_like(vor_segment)
+    # for i in range(1, np.max(unique_label) + 1): #unique_label consists of all unique cell labels in vor_seg
+    #     current_mask = unique_label == i #creating mask where specific label used is equal to i
+    #     average_apply_mask_2 = np.average(GFP[current_mask])
+    #     if average_apply_mask > 0.4:
+    #         values_in_field = GFP[current_mask] #apply the mask to the field of interest, which in this case is GFP since we're testing which segments meet the cutoff value
+    #     if len(values_in_field) == 0:
+    #         continue
+    #     _average = np.average(values_in_field)
+    #     average_list.append(_average)
+    #     average_pad[current_mask] = _average
+    #
+    #
+    # average_list_mCherry = []
+    # average_pad_mCherry = np.zeros_like(unique_label).astype(np.float32)
+    # values_in_field = None
+    #
+    # for i in range(1, np.max(unique_label) + 1):
+    #
+    #     current_mask = unique_label == i
+    #     values_in_field = mCherry[current_mask]
+    #
+    #     if len(values_in_field) == 0:
+    #         continue
+    #
+    #     _average = np.average(values_in_field)
+    #     average_list_mCherry.append(_average)
+    #     average_pad_mCherry[current_mask] = _average
+    #
+    #
+    # plt.figure()
+    # plt.subplot(221)
+    # plt.title("GFP as a Function of Cell Number-sorted")
+    # plt.xlabel('Cell Number-based on color')
+    # plt.ylabel('enuclear GFP')
+    # y = sorted(average_list)
+    # plt.plot(y)
+    #
+    #
+    # plt.subplot(222)
+    # plt.title("mCherry as a Function of Cell Number-sorted")
+    # plt.xlabel('Cell Number-based on color')
+    # plt.ylabel('mCherry')
+    # y = sorted(average_list_mCherry)
+    # plt.plot(y)
+    #
     # plt.subplot(223, sharex=main_ax, sharey=main_ax)
     # plt.title('GFP')
-    # plt.imshow(GFP, interpolation='nearest')
+    # plt.imshow(vor_segment_qualifying, interpolation='nearest')
+    # plt.contour(nuclei, [0.5], colors='k')
+    #
+    # plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    # plt.title('GFP')
+    # plt.imshow(values_in_field, interpolation='nearest')
+    # plt.contour(nuclei, [0.5], colors='k')
+    #
+    #
+    #
+    # # plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    # # plt.title('GFP')
+    # # plt.imshow(GFP, interpolation='nearest')
+    # # plt.contour(nuclei, [0.5], colors='k')
+    # # plt.contour(extra_nuclear_GFP, [0.5], colors='w')
+    #
+    # plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    # plt.title('mCherry')
+    # plt.imshow(mCherry, interpolation='nearest')
     # plt.contour(nuclei, [0.5], colors='k')
     # plt.contour(extra_nuclear_GFP, [0.5], colors='w')
-
-    plt.subplot(224, sharex=main_ax, sharey=main_ax)
-    plt.title('mCherry')
-    plt.imshow(mCherry, interpolation='nearest')
-    plt.contour(nuclei, [0.5], colors='k')
-    plt.contour(extra_nuclear_GFP, [0.5], colors='w')
-    plt.show()
+    # plt.show()
     if not save:
         plt.show()
 
@@ -402,6 +415,7 @@ def Kristen_render(name_pattern, DAPI, GFP, mCherry,
         name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
         plt.savefig(name_puck)
         plt.close()
+
 
 
 @generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))

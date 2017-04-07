@@ -26,6 +26,7 @@ import collections
 import debug_renders as dbg
 
 
+
 dtype2bits = {'uint8': 8,
               'uint16': 16,
               'uint32': 32}
@@ -470,6 +471,8 @@ def filter_labels(labels, binary_mask, min_feature_size=10):
 
     # dbg.filter_labels_debug(labels, binary_mask, filtered_labels)
 
+
+
     return filtered_labels
 
 
@@ -512,7 +515,7 @@ def in_contact(mask1, mask2, distance=10):
     for label in range(1, tot2+1):
         if np.any(intersection[labeled_mask2 == label]):
             in_contact2[labeled_mask2 == label] = 1
-
+    dbg.better2D_desisty_plot(mask1, mask2)
     return in_contact1, in_contact2
 
 
@@ -579,6 +582,12 @@ def qualifying_gfp(max_sum_projection):
 def label_based_aq(labels, field_of_interest):
     average_list = []
     average_pad = np.zeros_like(labels).astype(np.float32)
+
+    ########
+    # TODO: REMOVE ME
+    labels, _ = ndi.label(labels)
+
+    #########
 
     for i in range(1, np.max(labels) + 1):
 
