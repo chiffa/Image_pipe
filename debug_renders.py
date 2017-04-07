@@ -219,3 +219,14 @@ def plot_GFP_as_a_function_of_cell_number(unique_segmented_cell_labels, average_
     ax.plot(y)
     my_xticks = unique_segmented_cell_labels
     plt.xticks(x, my_xticks)
+
+def label_based_aq(ar):
+    plt.figure()
+    plt.title("GFP as a Function of Cell Number")
+    plt.xlabel('Cell Number')
+    plt.ylabel('GFP')
+    ax = plt.axes()
+    x = np.array[1:33]
+    y = ar
+    ax.plot(y)
+    plt.show()

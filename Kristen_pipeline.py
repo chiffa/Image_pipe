@@ -16,7 +16,7 @@ translator = {'C1':0,
               'C3':1,
               'C4':2}
 
-source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei', matching_map=translator)
+source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/20170209/Transfection C', matching_map=translator)
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
 
