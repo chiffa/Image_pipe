@@ -19,124 +19,27 @@ translator = {'C1':0,
 source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/20170209/Transfection C', matching_map=translator)
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
-
-max_DAPI = cf.max_projection(named_source, in_channel = 'DAPI', out_channel = 'max_DAPI')
-stabilized_DAPI = cf.gamma_stabilize(max_DAPI, in_channel = 'max_DAPI', min='min', alpha_clean=.5)
-smoothed_DAPI = cf.smooth_2d(stabilized_DAPI, in_channel = 'max_DAPI', smoothing_px = 0.5)
-
-
-max_GFP = cf.max_projection(smoothed_DAPI, in_channel = 'GFP', out_channel = 'max_GFP')
-smoothed_GFP = cf.smooth_2d(max_GFP, in_channel = 'max_GFP', smoothing_px = .5)
-max_mCherry = cf.max_projection(smoothed_GFP, in_channel = 'mCherry', out_channel = 'max_mCherry')
-smoothed_mCherry = cf.smooth_2d(max_mCherry, in_channel = 'max_mCherry', smoothing_px=.5)
-# can keep the above smoothing and stabilizing steps
+max_mCherry = cf.max_projection(named_source, in_channel = 'mCherry', out_channel = 'max_mCherry')
+stabilized_mCherry = cf.gamma_stabilize(max_mCherry, in_channel = 'max_mCherry', min='min', alpha_clean=.5)
+smoothed_mCherry = cf.smooth_2d(stabilized_mCherry, in_channel = 'max_mCherry', smoothing_px=.5)
 
 
 
-#
-binarized_nuclei = cf.robust_binarize(smoothed_mCherry,
-                                      in_channel='max_DAPI',
-                                      out_channel=['nuclei'],
-                                      _dilation=0,
-                                      heterogeity_size=5, feature_size=50)
-#
-# segmented_nuclei = cf.label_and_correct(binarized_nuclei,
-#                                         in_channel=['nuclei', 'max_DAPI'],
-#                                         out_channel='nuclei',
-#                                         min_px_radius=15, min_intensity=20)
-# don't really need to segment the nuclei...not concerned with what's inside them? CONFIRM THIS
 
-
-
-# Segmentation of GFP
-GFP_aq =  cf.label_based_aq(binarized_nuclei,
-                           in_channel=['nuclei', 'max_GFP'],
-                           out_channel=['av_GFP','av_GFP_pad'])
-# do we need this portion?
-
-GFP_o_n = cf.exclude_region(GFP_aq,
-                            in_channel=['nuclei', 'max_GFP'],
-                            out_channel='GFP_o_n')
-
-vor_seg = cf.voronoi_segment_labels(GFP_o_n,
-                                    in_channel='nuclei',
-                                    out_channel='vor_segment')
-# don't need to segment the GFP
-
-
-GFP_o_n_segmented = cf.robust_binarize(vor_seg,
-                                       in_channel='max_GFP',
-                                       out_channel='GFP_o_n_seg',
-                                       heterogeity_size=10, feature_size=100)
-
-# GFP_seg_contacted = cf.in_contact(GFP_o_n_segmented,
-#                                   in_channel=['GFP_o_n_seg', 'nuclei'],
-#                                   out_channel=['GFP_o_n_seg', '_'])
-# do we still need this?
-
-
-
-# GFP_o_n_filtered = cf.filter_labels(GFP_o_n_segmented,
-#                                     in_channel=['vor_segment', 'GFP_o_n_seg'],
-#                                     out_channel=['extra_nuclear_GFP'],
-#                                     min_feature_size=30)
-# can this upper portion be removed?
-# GFP_en_eq = cf.label_based_aq(GFP_o_n_segmented,
-#                               in_channel=['extra_nuclear_GFP','GFP_o_n'],
-#                               out_channel=['av_en_GFP', 'av_en_GFP_pad'])
-# will focus on GFP later-dont need this now
-
-
-
-# Segmentation of mCherry
-mCherry_aq = cf.label_based_aq(GFP_o_n_segmented,
-                           in_channel=['nuclei', 'max_mCherry'],
-                           out_channel=['nuc_mCherry', 'nuc_mCherry_pad'])
-
-mCherry_o_n = cf.exclude_region(mCherry_aq,
-                            in_channel=['nuclei', 'max_mCherry'],
-                            out_channel='mCherry_o_n')
-
-mCherry_o_n_segmented = cf.robust_binarize(mCherry_o_n,
+mCherry_o_n_segmented = cf.robust_binarize(smoothed_mCherry,
                                        in_channel='max_mCherry',
-                                       out_channel='max_mCherry_segmented',
-                                       heterogeity_size=10, feature_size=100)
+                                       out_channel='max_mCherry_binary',
+                                       heterogeity_size=10, feature_size=250)
+# original: 10, 100
 
-mCherry_seg_contacted = cf.in_contact(mCherry_o_n_segmented,
-                                  in_channel=['max_mCherry_segmented', 'GFP_o_n_seg'],
-                                  out_channel=['max_mCherry_segmented', '_'])
-
-mCherry_o_n_filtered = cf.filter_labels(mCherry_seg_contacted,
-                                    in_channel=['vor_segment', 'max_mCherry_segmented'],
-                                    out_channel=['extra_nuclear_mCherry'],
-                                    min_feature_size=30)
-
-mCherry_en_eq = cf.label_based_aq(mCherry_o_n_filtered,
-                              in_channel=['extra_nuclear_mCherry', 'mCherry_o_n'],
-                              out_channel=['av_en_mCherry', 'av_en_mCherry_pad'])
-
-
-
-
-# NEED TO REWORK PARAMETERS AND DIMS IN RENDER FUNCTION
-running_render = rdr.Kristen_render(mCherry_en_eq, in_channel=['name pattern',
-                                                               'max_DAPI',
-                                                               'max_GFP',
+running_render = rdr.Kristen_render(mCherry_o_n_segmented, in_channel=['name pattern',
                                                                'max_mCherry',
-                                                               'nuclei',
-                                                               'av_GFP_pad',
-                                                               'nuc_mCherry_pad',
-                                                               'av_en_mCherry_pad'],
-                                   #  original parameters, had to remove some since those elements were not the focus of analysis
-                                   # in_channel=['name pattern', 'max_DAPI', 'max_GFP', 'max_mCherry',
-                                   #             'nuclei', 'vor_segment',
-                                   #             'extra_nuclear_GFP', 'av_GFP_pad', 'av_en_GFP_pad',
-                                   #             'extra_nuclear_mCherry', 'nuc_mCherry_pad', 'av_en_mCherry_pad'],
+                                                               'max_mCherry_binary'],
                                    out_channel='_',
                                    save=False)
 
 
-Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'group id', 'av_GFP', 'av_GFP', 'av_en_mCherry', 'av_en_mCherry'],
+Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'group id', 'max_mCherry', 'max_mCherry_binary'],
                                           # in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                           #  'nuc_mCherry', 'av_en_mCherry'],
                                out_channel='_',

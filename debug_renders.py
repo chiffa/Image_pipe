@@ -1,7 +1,9 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy import histogram2d
-
+from core_functions import watershed
+from scipy import ndimage as ndi
+# my addition to imports: watershed, ndi
 
 def robust_binarize_debug(base, smooth, median, otsu, labels, binary, u_median, u_otsu):
     plt.figure(figsize=(20.0, 15.0))
@@ -209,17 +211,15 @@ def improved_watershed_plot_intensities(unique_segmented_cell_labels, average_ap
     my_xticks = unique_segmented_cell_labels
     plt.xticks(x, my_xticks)
 
-def plot_GFP_as_a_function_of_cell_number(unique_segmented_cell_labels, average_apply_mask):
+def plot_GFP_as_a_function_of_cell_number(average_apply_mask):
     plt.figure()
     plt.title("GFP as a Function of Cell Number")
     plt.xlabel('Cell Number')
     plt.ylabel('GFP')
     ax = plt.axes()
-    x = np.array[1:33]
     y = average_apply_mask
     ax.plot(y)
-    my_xticks = unique_segmented_cell_labels
-    plt.xticks(x, my_xticks)
+    plt.show()
 
 def label_based_aq(ar):
     plt.figure()
@@ -259,4 +259,48 @@ def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
         extent=np.array(xyrange).flatten(),
         interpolation='none')
     plt.plot(xdat1, ydat1, '.')
+    plt.show()
+
+def Kristen_robust_binarize(binary_labels, base_image):
+    print "reached Kristen robust binarize debug"
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(binary_labels)
+    plt.title("Binary labels")
+    plt.subplot(122)
+    plt.imshow(base_image)
+    plt.figure("Base Image")
+    labels, _ = ndi.label(binary_labels)
+    # dist = ndi.morphology.distance_transform_edt(np.logical_not(labels))
+    # segmented_cells_labels = watershed(dist, labels)
+    unique_segmented_cells_labels = np.unique(labels)
+    average_intensity_list = []
+    total_intensity_list = []
+    pixel_list = []
+    for cell_label in unique_segmented_cells_labels:
+        my_mask = labels == cell_label
+        average_apply_mask = np.mean(base_image[my_mask])
+
+        average_intensity_list.append(average_apply_mask)
+        intensity = np.sum(base_image[my_mask])
+        total_intensity_list.append(intensity)
+        binary_pad = np.zeros_like(base_image)
+        binary_pad[my_mask] = 1
+        pixel = np.sum(binary_pad[my_mask])
+        pixel_list.append(pixel)
+
+    print
+    print
+    print "avg intensity",average_intensity_list
+    print 'total intensity', total_intensity_list
+    print 'pixels', pixel_list
+    plt.subplot(131)
+    plt.plot(average_intensity_list)
+    plt.title('average intensity')
+    plt.subplot(132)
+    plt.plot(total_intensity_list)
+    plt.title('total intensity')
+    plt.subplot(133)
+    plt.plot(pixel_list)
+    plt.title('pixel values')
     plt.show()
