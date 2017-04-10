@@ -6,6 +6,7 @@ from csv import writer as csv_writer
 import scipy
 from core_functions import watershed
 from scipy import ndimage as ndi
+from scipy import histogram2d
 # my addition: imported watershed, ndi
 
 
@@ -285,7 +286,7 @@ def Kristen_render(name_pattern,
         binary_pad[my_mask] = 1
         pixel = np.sum(binary_pad[my_mask])
 
-        if (average_apply_mask > .05 or intensity > 300) and pixel > 5000:
+        if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
             mCherry_2[my_mask] = mCherry[my_mask]
 
 
