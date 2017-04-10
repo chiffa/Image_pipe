@@ -4,10 +4,10 @@ from matplotlib import pyplot as plt
 from core_functions import generator_wrapper, safe_dir_create
 from csv import writer as csv_writer
 import scipy
-from core_functions import watershed
 from scipy import ndimage as ndi
-from scipy import histogram2d
-# my addition: imported watershed, ndi
+from scipy import stats
+import density_plot as dplt
+import core_functions as cf
 
 
 
@@ -251,33 +251,37 @@ def Kristen_render_single_image(dapi, gfp, mcherry):
     plt.title('mCherry')
     plt.imshow(mcherry, interpolation='nearest')
 
-@generator_wrapper(in_dims=(None, 2, 2), out_dims=(None,))
+@generator_wrapper(in_dims=(None, 2, 2, 3, 3), out_dims=(None,))
 def Kristen_render(name_pattern,
                    mCherry,
                    extranuclear_mCherry_pad,
+                   GFP_orig,
+                   mCherry_orig,
                    save=False, directory_to_save_to='verification'):
-
+    print 'orig', len(GFP_orig), len(mCherry_orig)
     labels, _ = ndi.label(extranuclear_mCherry_pad)
     plt.figure(figsize=(26.0, 15.0))
     plt.title('Kristen\'s Data')
     plt.suptitle(name_pattern)
 
-    main_ax = plt.subplot(131)
-    plt.subplot(131, sharex=main_ax, sharey=main_ax)
+    main_ax = plt.subplot(211)
+    plt.subplot(211, sharex=main_ax, sharey=main_ax)
     plt.title('mCherry nucleus/cell intensity')
     im = plt.imshow(extranuclear_mCherry_pad, interpolation='nearest', cmap='hot')
     plt.colorbar(im)
-    plt.subplot(132, sharex=main_ax, sharey=main_ax)
+    plt.subplot(212, sharex=main_ax, sharey=main_ax)
     plt.title('mCherry')
     plt.imshow(mCherry, interpolation='nearest')
     plt.contour(extranuclear_mCherry_pad, [0.5], colors = 'k')
+    plt.show()
 
-    plt.subplot(133, sharex=main_ax, sharey=main_ax)
+    plt.figure()
     labels, _ = ndi.label(extranuclear_mCherry_pad)
-    # dist = ndi.morphology.distance_transform_edt(np.logical_not(labels))
-    # segmented_cells_labels = watershed(dist, labels)
     unique_segmented_cells_labels = np.unique(labels)[1:]
     mCherry_2 = np.zeros_like(mCherry)
+    qualifying_cell_label = []
+    qualifying_avg_intensity = []
+    qualifying_regression_stats = []
     for cell_label in unique_segmented_cells_labels:
         my_mask = labels == cell_label
         average_apply_mask = np.mean(mCherry[my_mask])
@@ -287,17 +291,38 @@ def Kristen_render(name_pattern,
         pixel = np.sum(binary_pad[my_mask])
 
         if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
+
+            GFP_orig_qualifying = cf._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_orig_qualifying = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+
+            mCherry_1d = mCherry_orig_qualifying[mCherry_orig_qualifying > 50]
+            GFP_1d = GFP_orig_qualifying[mCherry_orig_qualifying>50]
+            regression_results = stats.linregress(GFP_1d, mCherry_1d)
+            print 'regression results'
+            print regression_results[0]
+            print regression_results[2]
+            print regression_results[3]
+
             mCherry_2[my_mask] = mCherry[my_mask]
 
+            print mCherry_1d
+            print GFP_1d
 
-
-    #     TEST WITH IF STATEMENT. FINALIZE WITH SPLITTER FUNCTION
-
-
-
+            dplt.better2D_desisty_plot(GFP_1d, mCherry_1d)
+            plt.title('mCherry Intensity as a Function of GFP Voxel')
+            plt.xlabel('GFP Voxel')
+            plt.ylabel('mCherry Intensity')
+            plt.show()
+            qualifying_cell_label.append(cell_label)
+            qualifying_regression_stats.append((regression_results[0], regression_results[2], regression_results[3]))
+        else:
+            qualifying_regression_stats.append(0)
     plt.title('mCherry-cutoff applied')
     plt.imshow(mCherry_2, interpolation='nearest')
     plt.show()
+
+
+
 
     if not save:
         plt.show()
@@ -306,6 +331,8 @@ def Kristen_render(name_pattern,
         name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
         plt.savefig(name_puck)
         plt.close()
+    print "QUALIFYING REGRESSION RESULTS", qualifying_regression_stats
+    return qualifying_regression_stats
 
 
 
@@ -345,14 +372,15 @@ def linhao_secondary_summarize(primary_namespace, output):
 
     return primary_namespace
 
-@generator_wrapper(in_dims=(None, None, 2, 2), out_dims=(None,)) #originally dim 1, need to fix this
-def Kristen_summarize_a(name_pattern, group_by, av_nuc_mCherry, av_en_mCherry, output):
-    print 'mCherry-nuclear, cellular', av_nuc_mCherry, av_en_mCherry
+@generator_wrapper(in_dims=(None, None, 2 , 1), out_dims=(None,)) #originally dim 1, need to fix this
+def Kristen_summarize_a(name_pattern, group_by, max_mCherry, regression_results, output):
+    print 'mCherry-nuclear, cellular', max_mCherry
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
-        for i, nuc_pac in enumerate(zip(av_nuc_mCherry, av_en_mCherry)):
-            # if av_nuc_GFP[i] > 0.4:
-            writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1]])
-# CONFIRM CUTOFF VALUE!
+        for i, reg in enumerate(zip(max_mCherry, regression_results)):
+         # won't work, these two don't have the same dimension!
+           if reg != 0:
+                writer.writerow([name_pattern, group_by, i, reg])
+        # for i in regression_results
 
 safe_dir_create('verification')

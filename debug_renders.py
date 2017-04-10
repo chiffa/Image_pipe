@@ -303,4 +303,4 @@ def Kristen_robust_binarize(binary_labels, base_image):
     plt.subplot(133)
     plt.plot(pixel_list)
     plt.title('pixel values')
-    plt.show()
+    # plt.show

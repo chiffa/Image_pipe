@@ -421,7 +421,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
 
         # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
-    dbg.Kristen_robust_binarize(binary_labels, base_image)
+    # dbg.Kristen_robust_binarize(binary_labels, base_image)
     return binary_labels
 
 
