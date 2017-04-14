@@ -504,6 +504,7 @@ def in_contact(mask1, mask2, distance=10):
         if np.any(intersection[labeled_mask2 == label]):
             in_contact2[labeled_mask2 == label] = 1
     dbg.better2D_desisty_plot(mask1, mask2)
+    dbg.in_contact(in_contact1, in_contact2)
     return in_contact1, in_contact2
 
 

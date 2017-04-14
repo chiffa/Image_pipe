@@ -304,3 +304,16 @@ def Kristen_robust_binarize(binary_labels, base_image):
     plt.plot(pixel_list)
     plt.title('pixel values')
     # plt.show
+
+    def in_contact(ic1, ic2):
+        plt.figure(figsize=(20.0, 15.0))
+        plt.suptitle('In Contact')
+
+        main_ax = plt.subplot(121)
+        plt.title('mCherry')
+        plt.imshow(ic1, interpolation='nearest', cmap=plt.cm.spectral)
+
+        plt.subplot(122, sharex=main_ax, sharey=main_ax)
+        plt.title('GFP')
+        plt.imshow(ic2, interpolation='nearest', cmap='gray')
+        plt.show()

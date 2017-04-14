@@ -372,15 +372,17 @@ def linhao_secondary_summarize(primary_namespace, output):
 
     return primary_namespace
 
-@generator_wrapper(in_dims=(None, None, 2 , 1), out_dims=(None,)) #originally dim 1, need to fix this
-def Kristen_summarize_a(name_pattern, group_by, max_mCherry, regression_results, output):
+@generator_wrapper(in_dims=(None, None, 2 ), out_dims=(None,))
+def Kristen_summarize_a(name_pattern, group_by, max_mCherry, output):
     print 'mCherry-nuclear, cellular', max_mCherry
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
-        for i, reg in enumerate(zip(max_mCherry, regression_results)):
+        for i,j in enumerate(zip(max_mCherry)):
          # won't work, these two don't have the same dimension!
-           if reg != 0:
-                writer.writerow([name_pattern, group_by, i, reg])
+            writer.writerow([name_pattern, group_by, i])
         # for i in regression_results
-
+# NOTE: Still need to come back and write out the regression results to the csv file
 safe_dir_create('verification')
+
+# need to take the elements that are in the regression results that you need and put one by one
+# in the row you are trying to write writerow expects a flat list

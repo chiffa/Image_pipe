@@ -40,12 +40,18 @@ running_render = rdr.Kristen_render(mCherry_o_n_segmented, in_channel=['name pat
                                    save=False)
 
 
-Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'group id', 'max_mCherry', 'qualifying_regression_stats'],
+Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'group id', 'max_mCherry'],
+                                          # 'qualifying_regression_stats'
                                           # in_channel=['name pattern', 'group id', 'av_GFP', 'av_en_GFP',
                                           #  'nuc_mCherry', 'av_en_mCherry'],
                                out_channel='_',
                                output='Kristen_analysis_results_1.csv')
 # rename csv files so they have clearer, more descriptive names
+GFP_mCherry_colocalization = cf.in_contact(Kristen_summary, in_channel = ['max_mCherry', 'max_GFP'], out_channel = ['colocalization_mCherry', 'colocalization_GFP'])
+
+
+# FRIDAY 4/14
+#     Find GFP-mCHerry colocalization
 
 
 # Derivation from Linhao's Pipeline
