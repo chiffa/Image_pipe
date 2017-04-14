@@ -6,12 +6,6 @@ import numpy as np
 
 
 def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
-    print
-    print 'x',xdat
-    print len(xdat)
-    print
-    print 'y', ydat
-    print len(ydat)
     xyrange = [[min(xdat), max(xdat)], [min(ydat), max(ydat)]]
     distortion = (xyrange[1][1] - xyrange[1][0]) / \
         (xyrange[0][1] - xyrange[0][0])

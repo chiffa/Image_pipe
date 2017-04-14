@@ -258,7 +258,6 @@ def Kristen_render(name_pattern,
                    GFP_orig,
                    mCherry_orig,
                    save=False, directory_to_save_to='verification'):
-    print 'orig', len(GFP_orig), len(mCherry_orig)
     labels, _ = ndi.label(extranuclear_mCherry_pad)
     plt.figure(figsize=(26.0, 15.0))
     plt.title('Kristen\'s Data')
@@ -273,7 +272,7 @@ def Kristen_render(name_pattern,
     plt.title('mCherry')
     plt.imshow(mCherry, interpolation='nearest')
     plt.contour(extranuclear_mCherry_pad, [0.5], colors = 'k')
-    plt.show()
+    # plt.show()
 
     plt.figure()
     labels, _ = ndi.label(extranuclear_mCherry_pad)
@@ -282,7 +281,9 @@ def Kristen_render(name_pattern,
     qualifying_cell_label = []
     qualifying_avg_intensity = []
     qualifying_regression_stats = []
+
     for cell_label in unique_segmented_cells_labels:
+
         my_mask = labels == cell_label
         average_apply_mask = np.mean(mCherry[my_mask])
         intensity = np.sum(mCherry[my_mask])
@@ -292,46 +293,62 @@ def Kristen_render(name_pattern,
 
         if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
 
+            # create a limited to a cell mask
+            GFP_limited_to_cell_mask = cf._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_limited_to_cell_mask = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+
+            # measure GFP in qualifying areas based on mCherry
+            qualifying_3d_GFP = GFP_limited_to_cell_mask[mCherry_limited_to_cell_mask>50]
+            average_3d_GFP = np.mean(qualifying_3d_GFP)
+            median_3d_GFP = np.median(qualifying_3d_GFP)
+            std_3d_GFP = np.std(qualifying_3d_GFP)
+
+            nonqualifying_3d_GFP = GFP_limited_to_cell_mask[mCherry_limited_to_cell_mask<=50]
+            average_nonqualifying_3d_GFP = np.mean(nonqualifying_3d_GFP)
+            median_nonqualifying_3d_GFP = np.median(nonqualifying_3d_GFP)
+            std_nonqualifying_3d_GFP = np.std(nonqualifying_3d_GFP)
+
             GFP_orig_qualifying = cf._3d_stack_2d_filter(GFP_orig, my_mask)
             mCherry_orig_qualifying = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
-
             mCherry_1d = mCherry_orig_qualifying[mCherry_orig_qualifying > 50]
             GFP_1d = GFP_orig_qualifying[mCherry_orig_qualifying>50]
             regression_results = stats.linregress(GFP_1d, mCherry_1d)
-            print 'regression results'
-            print regression_results[0]
-            print regression_results[2]
-            print regression_results[3]
+            # print 'regression results'
+            # print regression_results[0]
+            # print regression_results[2]
+            # print regression_results[3]
 
             mCherry_2[my_mask] = mCherry[my_mask]
-
-            print mCherry_1d
-            print GFP_1d
 
             dplt.better2D_desisty_plot(GFP_1d, mCherry_1d)
             plt.title('mCherry Intensity as a Function of GFP Voxel')
             plt.xlabel('GFP Voxel')
             plt.ylabel('mCherry Intensity')
-            plt.show()
+            # plt.show()
             qualifying_cell_label.append(cell_label)
             qualifying_regression_stats.append((regression_results[0], regression_results[2], regression_results[3]))
-        else:
-            qualifying_regression_stats.append(0)
+            # mCherry_3d_qualifying = mCherry_orig[mCherry_orig>50]
+
+            print 'Qualifying data: mean, median, standard deviation:   ', average_3d_GFP, median_3d_GFP, std_3d_GFP
+            print 'Non-qualifying data: mean, median, standard deviation:   ', average_nonqualifying_3d_GFP, median_nonqualifying_3d_GFP, std_nonqualifying_3d_GFP
+
+
     plt.title('mCherry-cutoff applied')
     plt.imshow(mCherry_2, interpolation='nearest')
-    plt.show()
-
-
-
+    # plt.show()
 
     if not save:
         plt.show()
 
     else:
-        name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
+        name_puck = directory_to_save_to+'/'+'Kristen-'+name_pattern+'.png'
         plt.savefig(name_puck)
         plt.close()
+    print
     print "QUALIFYING REGRESSION RESULTS", qualifying_regression_stats
+    print
+    print
+
     return qualifying_regression_stats
 
 
@@ -374,7 +391,6 @@ def linhao_secondary_summarize(primary_namespace, output):
 
 @generator_wrapper(in_dims=(None, None, 2 ), out_dims=(None,))
 def Kristen_summarize_a(name_pattern, group_by, max_mCherry, output):
-    print 'mCherry-nuclear, cellular', max_mCherry
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
         for i,j in enumerate(zip(max_mCherry)):
