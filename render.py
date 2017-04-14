@@ -251,12 +251,13 @@ def Kristen_render_single_image(dapi, gfp, mcherry):
     plt.title('mCherry')
     plt.imshow(mcherry, interpolation='nearest')
 
-@generator_wrapper(in_dims=(None, 2, 2, 3, 3), out_dims=(None,))
+@generator_wrapper(in_dims=(None,None, 2, 2, 3, 3), out_dims=(None,))
 def Kristen_render(name_pattern,
+                   group_id,
                    mCherry,
                    extranuclear_mCherry_pad,
                    GFP_orig,
-                   mCherry_orig,
+                   mCherry_orig, output,
                    save=False, directory_to_save_to='verification'):
     labels, _ = ndi.label(extranuclear_mCherry_pad)
     plt.figure(figsize=(26.0, 15.0))
@@ -293,11 +294,9 @@ def Kristen_render(name_pattern,
 
         if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
 
-            # create a limited to a cell mask
             GFP_limited_to_cell_mask = cf._3d_stack_2d_filter(GFP_orig, my_mask)
             mCherry_limited_to_cell_mask = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
 
-            # measure GFP in qualifying areas based on mCherry
             qualifying_3d_GFP = GFP_limited_to_cell_mask[mCherry_limited_to_cell_mask>50]
             average_3d_GFP = np.mean(qualifying_3d_GFP)
             median_3d_GFP = np.median(qualifying_3d_GFP)
@@ -313,10 +312,6 @@ def Kristen_render(name_pattern,
             mCherry_1d = mCherry_orig_qualifying[mCherry_orig_qualifying > 50]
             GFP_1d = GFP_orig_qualifying[mCherry_orig_qualifying>50]
             regression_results = stats.linregress(GFP_1d, mCherry_1d)
-            # print 'regression results'
-            # print regression_results[0]
-            # print regression_results[2]
-            # print regression_results[3]
 
             mCherry_2[my_mask] = mCherry[my_mask]
 
@@ -324,18 +319,14 @@ def Kristen_render(name_pattern,
             plt.title('mCherry Intensity as a Function of GFP Voxel')
             plt.xlabel('GFP Voxel')
             plt.ylabel('mCherry Intensity')
-            # plt.show()
             qualifying_cell_label.append(cell_label)
             qualifying_regression_stats.append((regression_results[0], regression_results[2], regression_results[3]))
-            # mCherry_3d_qualifying = mCherry_orig[mCherry_orig>50]
-
-            print 'Qualifying data: mean, median, standard deviation:   ', average_3d_GFP, median_3d_GFP, std_3d_GFP
-            print 'Non-qualifying data: mean, median, standard deviation:   ', average_nonqualifying_3d_GFP, median_nonqualifying_3d_GFP, std_nonqualifying_3d_GFP
-
+            with open(output, 'ab') as output_file:
+                writer = csv_writer(output_file, delimiter='\t')
+                writer.writerow([group_id, cell_label, average_3d_GFP, median_3d_GFP, std_3d_GFP, average_nonqualifying_3d_GFP, median_nonqualifying_3d_GFP, std_nonqualifying_3d_GFP, regression_results[0], regression_results[2], regression_results[3]])
 
     plt.title('mCherry-cutoff applied')
     plt.imshow(mCherry_2, interpolation='nearest')
-    # plt.show()
 
     if not save:
         plt.show()
@@ -344,10 +335,6 @@ def Kristen_render(name_pattern,
         name_puck = directory_to_save_to+'/'+'Kristen-'+name_pattern+'.png'
         plt.savefig(name_puck)
         plt.close()
-    print
-    print "QUALIFYING REGRESSION RESULTS", qualifying_regression_stats
-    print
-    print
 
     return qualifying_regression_stats
 
@@ -389,16 +376,13 @@ def linhao_secondary_summarize(primary_namespace, output):
 
     return primary_namespace
 
-@generator_wrapper(in_dims=(None, None, 2 ), out_dims=(None,))
-def Kristen_summarize_a(name_pattern, group_by, max_mCherry, output):
-    with open(output, 'ab') as output_file:
-        writer = csv_writer(output_file)
-        for i,j in enumerate(zip(max_mCherry)):
-         # won't work, these two don't have the same dimension!
-            writer.writerow([name_pattern, group_by, i])
-        # for i in regression_results
-# NOTE: Still need to come back and write out the regression results to the csv file
-safe_dir_create('verification')
+# @generator_wrapper(in_dims=(None, 0, 0, 0, 0, 0, 0, 0, 0, 0 ), out_dims=(None,))
+# def Kristen_summarize_a(name_pattern, q_mean,q_median, q_std, nq_mean, nq_median, nq_std, slope, r2, p, output):
+#
+#     with open(output, 'ab') as output_file:
+#         # csv_read = csv.res
+#         writer = csv_writer(output_file, delimiter = '\t')
+#         for i in name_pattern:
+#             writer.writerow([i, q_mean, q_median, q_std, nq_mean, nq_median, nq_std, slope, r2, p])
 
-# need to take the elements that are in the regression results that you need and put one by one
-# in the row you are trying to write writerow expects a flat list
+safe_dir_create('verification')
