@@ -329,7 +329,6 @@ def gamma_stabilize(current_image, alpha_clean=5, min='min'):
         raise PipeArgError('min can only be one of the three types: min, 1q, 5p or median')
     stabilized = (current_image - inner_min)/(float(2**bits) - inner_min)
     stabilized[stabilized < alpha_clean*np.median(stabilized)] = 0
-    # dbg.max_projection_debug(np.max(current_image, axis=0))
     return stabilized
 
 
@@ -341,9 +340,12 @@ def smooth(current_image, smoothing_px=1.5):
         current_image[current_image < 5*np.mean(current_image)] = 0
     return current_image
 
-
+# original: in dims below = 2
+# maybe not set dims and covert to 2 dims
 @generator_wrapper(in_dims=(2,))
 def smooth_2d(current_image, smoothing_px=1.5):
+    # if np.shape(current_image) == (3,3):
+    #     current_image = np.max(current_image, axis = 0)
     current_image = gaussian_filter(current_image, smoothing_px, mode='constant')
     current_image[current_image < 5*np.mean(current_image)] = 0
     # dbg.max_projection_debug(np.max(current_image, axis=0))
@@ -384,6 +386,7 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
+
     if np.percentile(base_image, 99) < 0.20:
         if np.percentile(base_image, 99) > 0:
             mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions
@@ -404,7 +407,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     clustering_markers[smooth_median < local_otsu * 0.9] = 1
     clustering_markers[smooth_median > local_otsu * 1.1] = 2
-
+    # dbg.random_walker_debug(smooth_median, clustering_markers)
     binary_labels = random_walker(smooth_median, clustering_markers, beta=10, mode='bf') - 1
 
     if _dilation:
@@ -422,7 +425,7 @@ def voronoi_segment_labels(binary_labels):
 
     dist = ndi.morphology.distance_transform_edt(np.logical_not(binary_labels))
     segmented_cells_labels = watershed(dist, binary_labels)
-    # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
+
 
     return segmented_cells_labels
 
@@ -450,6 +453,8 @@ def filter_labels(labels, binary_mask, min_feature_size=10):
             filtered_labels[labels == val] = labels[labels == val]
 
     # dbg.filter_labels_debug(labels, binary_mask, filtered_labels)
+
+
 
     return filtered_labels
 
@@ -493,7 +498,9 @@ def in_contact(mask1, mask2, distance=10):
     for label in range(1, tot2+1):
         if np.any(intersection[labeled_mask2 == label]):
             in_contact2[labeled_mask2 == label] = 1
-
+    # dbg.in_contact_debug(in_contact1, in_contact2)
+    print 'in contact 1', in_contact1
+    print 'in contact 2', in_contact2
     return in_contact1, in_contact2
 
 
@@ -547,7 +554,7 @@ def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intens
         label_mean = np.mean(value_channel[labeled_field == label])
         if px_radius < min_px_radius or total_intensity < min_intensity or label_mean < mean_diff*background_mean:
             labeled_field[labeled_field == label] = 0
-
+    # dbg.label_and_correct_debug(labeled_field)
     return labeled_field
 
 
@@ -560,6 +567,12 @@ def qualifying_gfp(max_sum_projection):
 def label_based_aq(labels, field_of_interest):
     average_list = []
     average_pad = np.zeros_like(labels).astype(np.float32)
+
+    ########
+    # TODO: REMOVE ME
+    labels,_   = ndi.label(labels)
+
+    #########
 
     for i in range(1, np.max(labels) + 1):
 

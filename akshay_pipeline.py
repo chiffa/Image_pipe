@@ -5,7 +5,9 @@ import render as rdr
 from csv import writer as csv_writer
 
 # source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\tiff")
-source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\11-21-16 RPE IF untreat mps nut images")
+# source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\11-21-16 RPE IF untreat mps nut images")
+source = uf.Akshay_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Common/AKN/IF test images nuc vs cyto/11-21-16 RPE IF untreat mps nut - Analysis run')
+print 'source', source
 named_source = uf.name_channels(source, ['DAPI', 'p53', 'p21'])
 
 stablilized_1 = cf.gamma_stabilize(named_source, in_channel='DAPI', min='min', alpha_clean=.5)
@@ -96,7 +98,9 @@ running_render = rdr.akshay_render(p21_en_eq,
                                                'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad',
                                                'extra_nuclear_p21', 'nuc_p21_pad', 'av_en_p21_pad'],
                                    out_channel='_',
-                                   save=True)
+                                   save=False)
+
+# after checking this pipeline, replace False with True
 
 summary = rdr.akshay_summarize(running_render,
                                in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',

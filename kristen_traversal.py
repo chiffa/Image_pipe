@@ -7,20 +7,11 @@ from pympler import  muppy, summary
 import csv
 from matplotlib import pyplot as plt
 
-
-# Once this script is approved, REMOVE DEBUG STATEMENTS AND COMMIT+PUSH CHANGES
-
-
-
 def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
     print "starting kristen's traversal"
     matched_images = defaultdict(lambda: [''] * len(matching_map))
-    # reference: {name_pattern:[location of DAPI, location of GFP, location of mCherry]}
-    print len(matching_map)
-    print matched_images
-    tags_dict = defaultdict(lambda: [])
-    # do we even need this? For linhao's case this was used to keep track of HS time
-    name_pattern_list = []
+
+    # name_pattern_list = []
     if matching_rule:
         assert (matching_map is not None)
     for current_location, sub_directories, files in os.walk(main_root):
@@ -29,13 +20,32 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
                     if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
                         prefix = cf.split_and_trim(current_location, main_root)
                         img_codename = [img.split('.')[0]]
-                        print img_codename[0].split(' ')[1:]
-                        name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
-                        group_by = img_codename[0][:2]
-                        color = matching_map[img_codename[0].split('-')[0]]
-                        matched_images[name_pattern][color] = os.path.join(current_location, img)
 
 
+
+                        # # choosing one image to work with
+                        # c = img_codename[0].split('-')[0]
+                        # b = img_codename[0].split(' ')[-1][0]
+                        # print c
+                        # print b
+                        # if c == 'C1' and b[0] == 'B':
+                        #     # change these conditions back to original to test all images
+                        #     print "found image"
+                        #
+                        #     name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
+                        #     group_by = img_codename[0][:2]
+                        #     color = matching_map[img_codename[0].split('-')[0]]
+                        #     # print matched_images[name_pattern][color]
+                        #     # print os.path.join(current_location, img)
+                        #     matched_images[name_pattern][color] = os.path.join(current_location, img)
+                    name_pattern = ' - '.join(prefix + img_codename[0].split(' ')[1:])
+                    group_by = img_codename[0][:2]
+                    color = matching_map[img_codename[0].split('-')[0]]
+                    # print matched_images[name_pattern][color]
+                    # print os.path.join(current_location, img)
+                    matched_images[name_pattern][color] = os.path.join(current_location, img)
+
+    # shift tab upper portion out/ placed inside for loop to study a single image but originally only inside the if(.TIF...)
 
     delset = []
 
@@ -59,7 +69,6 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
         # this is the file we need to save unless user provides input saying we can override it
         writer = csv.writer(initial_open, delimiter='\t')
         for key in matched_images:
-            print key
             writer.writerow([key] + matched_images[key] + [0])
         initial_open.close()
 
@@ -123,14 +132,15 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
 #         plt.imshow(mcherry, interpolation='nearest', alpha=0.3)
 #         plt.show()
 
-        yield name_pattern, channels
+        yield name_pattern, matched_images, channels
         row[3] = 1
         writer_check_tmp.writerow(row)
 
 translator = {'C1':0,
               'C3':1,
               'C4':2}
-# Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/", matching_map=translator)
+# Kristen_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei", matching_map=translator)
+
 def name_channels(stack_group_generator, channel_names):
     """
     Assigns names to the channel for the future processing and bundles them together
@@ -139,6 +149,7 @@ def name_channels(stack_group_generator, channel_names):
     :param channel_names:
     :return:
     """
+
     for name_pattern, group_ids, channels in stack_group_generator:
         group_dict = {'name pattern': name_pattern,
                       'group id': group_ids}
@@ -148,5 +159,5 @@ def name_channels(stack_group_generator, channel_names):
 
         yield group_dict
 
-# # C1 = DAPI, C3 = GFP, C4 = mCherry
+# C1 = DAPI, C3 = GFP, C4 = mCherry
 

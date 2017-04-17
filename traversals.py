@@ -41,7 +41,6 @@ def Linhao_traverse(main_root,
     """
     matched_images = defaultdict(lambda: ['']*len(matching_map.keys()))
     tags_dict = defaultdict(lambda: [])
-
     if matching_rule:
         assert(matching_map is not None)
 
@@ -142,6 +141,8 @@ def Linhao_traverse(main_root,
         channels = []
         for color in color_set:
             channels.append(cf.tiff_stack_2_np_arr(color))
+        print "name pattern", name_pattern
+        print 'channels', channels
         yield name_pattern, tags_dict[name_pattern], channels
         row[3] = 1
         writer_check_tmp.writerow(row)
@@ -154,6 +155,7 @@ def name_channels(stack_group_generator, channel_names):
     :param channel_names:
     :return:
     """
+    print stack_group_generator
 
     for name_pattern, group_ids, channels in stack_group_generator:
         group_dict = {'name pattern': name_pattern,
@@ -184,6 +186,7 @@ def Akshay_traverse(main_root):
         stack = np.rollaxis(stack[0, :, :, :], 2)  # on the data where channels have not been split into z stacks
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
+        yield stack, channels
 
 
 def xi_traverse(main_root, matching_map=None):

@@ -24,7 +24,14 @@ max_mCherry = cf.max_projection(named_source, in_channel = 'mCherry', out_channe
 
 max_GFP = cf.max_projection(max_mCherry, in_channel = 'GFP', out_channel = 'max_GFP')
 
-stabilized_mCherry = cf.gamma_stabilize(max_GFP, in_channel = 'max_mCherry', min='min', alpha_clean=.5)
+max_DAPI = cf.sum_projection(max_GFP, in_channel = 'DAPI', out_channel = 'sum_DAPI')
+
+binarized_nuclei = cf.robust_binarize(max_DAPI, in_channel = 'sum_DAPI', out_channel = 'nuclei', _dilation=0,
+                                      heterogeity_size=5, feature_size=50)
+
+segmented_nuclei = cf.label_and_correct(binarized_nuclei, in_channel = ['nuclei', 'sum_DAPI'], out_channel = 'nuclei',min_px_radius=15, min_intensity=20)
+
+stabilized_mCherry = cf.gamma_stabilize(segmented_nuclei, in_channel = 'max_mCherry', min='min', alpha_clean=.5)
 
 smoothed_mCherry = cf.smooth_2d(stabilized_mCherry, in_channel = 'max_mCherry', smoothing_px=.5)
 
@@ -40,8 +47,8 @@ running_render = rdr.Kristen_render(mCherry_o_n_segmented, in_channel=['name pat
                                                                'GFP',
                                                                'mCherry'],
                                    out_channel='_',
-                                    output='Kristen_Transfection_B_and_C_GFP_analysis_results.csv',
-                                   save=True)
+                                    output='Kristen_Transfection_B_and_C_GFP_analysis_results_2.csv',
+                                   save=False)
 
 #
 # Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'q_mean','q_median', 'q_std', 'nq_mean', 'nq_median', 'nq_std', 'slope', 'r2', 'p'],

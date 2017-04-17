@@ -1,6 +1,9 @@
 from matplotlib import pyplot as plt
 import numpy as np
-
+from scipy import histogram2d
+from core_functions import watershed
+from scipy import ndimage as ndi
+# my addition to imports: watershed, ndi
 
 def robust_binarize_debug(base, smooth, median, otsu, labels, binary, u_median, u_otsu):
     plt.figure(figsize=(20.0, 15.0))
@@ -83,7 +86,7 @@ def filter_labels_debug(labels, binary, result):
 
     plt.subplot(223, sharex=main_ax, sharey=main_ax)
     plt.title('result')
-    plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0),
+    plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0)
 
 
 
@@ -122,8 +125,7 @@ def max_projection_debug(current_image):
     main_ax = plt.subplot(121)
     plt.title('current')
     plt.imshow(current_image, interpolation='nearest', cmap=plt.cm.spectral)
-
-
+    plt.show()
 
 def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mask, support_mask, mito_classes, final_classes, cell_labels, name_pattern):
 
@@ -189,9 +191,6 @@ def improved_watershed_debug(segmented_cells_labels, mcherry):
     plt.subplot(122, sharex=main_ax, sharey=main_ax)
     plt.title('projected mCherry')
     plt.imshow(mcherry, interpolation='nearest', cmap='gray')
-
-    # plt.subplot(223, sharex=main_ax, sharey=main_ax)
-    # plt.title('Superimposed')
     plt.imshow(segmented_cells_labels, interpolation='nearest', alpha= 0.3)
 
 
@@ -208,3 +207,122 @@ def improved_watershed_plot_intensities(unique_segmented_cell_labels, average_ap
     ax.plot(y)
     my_xticks = unique_segmented_cell_labels
     plt.xticks(x, my_xticks)
+
+def plot_GFP_as_a_function_of_cell_number(average_apply_mask):
+    plt.figure()
+    plt.title("GFP as a Function of Cell Number")
+    plt.xlabel('Cell Number')
+    plt.ylabel('GFP')
+    ax = plt.axes()
+    y = average_apply_mask
+    ax.plot(y)
+    plt.show()
+
+def label_based_aq(ar):
+    plt.figure()
+    plt.title("GFP as a Function of Cell Number")
+    plt.xlabel('Cell Number')
+    plt.ylabel('GFP')
+    ax = plt.axes()
+    x = np.array[1:33]
+    y = ar
+    ax.plot(y)
+    plt.show()
+
+def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
+    xdat = np.max(xdat, axis=0)
+    ydat = np.max(ydat, axis=0)
+    xyrange = [[min(xdat), max(xdat)], [min(ydat), max(ydat)]]
+    distortion = (xyrange[1][1] - xyrange[1][0]) / \
+        (xyrange[0][1] - xyrange[0][0])
+    xdat = xdat * distortion
+
+    xyrange = [[min(xdat), max(xdat)], [min(ydat), max(ydat)]]
+    hh, locx, locy = histogram2d(xdat, ydat, range=xyrange, bins=bins)
+    posx = np.digitize(xdat, locx)
+    posy = np.digitize(ydat, locy)
+
+    ind = (posx > 0) & (posx <= bins[0]) & (posy > 0) & (posy <= bins[1])
+    # values of the histogram where the points are
+    hhsub = hh[posx[ind] - 1, posy[ind] - 1]
+    xdat1 = xdat[ind][hhsub < thresh]  # low density points
+    ydat1 = ydat[ind][hhsub < thresh]
+    hh[hh < thresh] = np.nan  # fill the areas with low density by NaNs
+
+    plt.imshow(
+        np.flipud(
+            hh.T),
+        cmap='jet',
+        extent=np.array(xyrange).flatten(),
+        interpolation='none')
+    plt.plot(xdat1, ydat1, '.')
+    plt.show()
+
+def Kristen_robust_binarize(binary_labels, base_image):
+    print "reached Kristen robust binarize debug"
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(binary_labels)
+    plt.title("Binary labels")
+    plt.subplot(122)
+    plt.imshow(base_image)
+    plt.figure("Base Image")
+    labels, _ = ndi.label(binary_labels)
+    # dist = ndi.morphology.distance_transform_edt(np.logical_not(labels))
+    # segmented_cells_labels = watershed(dist, labels)
+    unique_segmented_cells_labels = np.unique(labels)
+    average_intensity_list = []
+    total_intensity_list = []
+    pixel_list = []
+    for cell_label in unique_segmented_cells_labels:
+        my_mask = labels == cell_label
+        average_apply_mask = np.mean(base_image[my_mask])
+
+        average_intensity_list.append(average_apply_mask)
+        intensity = np.sum(base_image[my_mask])
+        total_intensity_list.append(intensity)
+        binary_pad = np.zeros_like(base_image)
+        binary_pad[my_mask] = 1
+        pixel = np.sum(binary_pad[my_mask])
+        pixel_list.append(pixel)
+
+    print
+    print
+    print "avg intensity",average_intensity_list
+    print 'total intensity', total_intensity_list
+    print 'pixels', pixel_list
+    plt.subplot(131)
+    plt.plot(average_intensity_list)
+    plt.title('average intensity')
+    plt.subplot(132)
+    plt.plot(total_intensity_list)
+    plt.title('total intensity')
+    plt.subplot(133)
+    plt.plot(pixel_list)
+    plt.title('pixel values')
+    # plt.show
+
+def in_contact_debug(ic1, ic2):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('In Contact')
+
+    main_ax = plt.subplot(121)
+    plt.title('mCherry')
+    plt.imshow(ic1, interpolation='nearest', cmap=plt.cm.spectral)
+
+    plt.subplot(122, sharex=main_ax, sharey=main_ax)
+    plt.title('GFP')
+    plt.imshow(ic2, interpolation='nearest', cmap='gray')
+    plt.show()
+
+def label_and_correct_debug(segmented):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.title('Label and Correct')
+    plt.imshow(segmented)
+
+def random_walker_debug(p1, p2):
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(p1)
+    plt.subplot(212)
+    plt.plot(p2)
