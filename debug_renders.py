@@ -333,6 +333,14 @@ def random_walker_debug(p1, p2):
     plt.plot(p1)
     plt.subplot(212)
     plt.plot(p2)
+    plt.show()
+
+
+def sum_proj_debug(image):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.title('Sum Projection')
+    plt.imshow(image)
+    plt.show()
 
 
 def DAPI_debug(stabilized, smoothed):
@@ -370,5 +378,3 @@ def nuclei_debug(binarized, segmented):
     plt.imshow(segmented, interpolation='nearest', cmap='gray')
 
     plt.show()
-
-# problem: you're trying to graph a generator, not a 3-D numpy array

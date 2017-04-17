@@ -355,6 +355,7 @@ def smooth_2d(current_image, smoothing_px=1.5):
 @generator_wrapper(in_dims=(3,), out_dims=(2,))
 def sum_projection(current_image):
     # dbg.max_projection_debug(np.max(current_image, axis=0))
+    # dbg.sum_proj_debug(np.sum(current_image, axis=0))
     return np.sum(current_image, axis=0)
 
 
@@ -394,6 +395,8 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
             mult = 1000. / np.sum(base_image)
         base_image = base_image * mult
         base_image[base_image > 1] = 1
+
+
     clustering_markers = np.zeros(base_image.shape, dtype=np.uint8)
 
     selem = disk(heterogeity_size)
@@ -407,16 +410,23 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     clustering_markers[smooth_median < local_otsu * 0.9] = 1
     clustering_markers[smooth_median > local_otsu * 1.1] = 2
+
     # dbg.random_walker_debug(smooth_median, clustering_markers)
+    # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
+    #                           0, uniform_median, uniform_median_otsu)
     binary_labels = random_walker(smooth_median, clustering_markers, beta=10, mode='bf') - 1
+
 
     if _dilation:
         selem = disk(_dilation)
         binary_labels = dilation(binary_labels, selem)
 
-    # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
-    #                           binary_labels, uniform_median, uniform_median_otsu)
 
+    # dbg.robust_binarize_debug(binary_labels, base_image)
+
+
+    # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
+    # dbg.Kristen_robust_binarize(binary_labels, base_image)
     return binary_labels
 
 
