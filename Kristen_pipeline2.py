@@ -16,7 +16,7 @@ translator = {'C1':0,
               'C3':1,
               'C4':2}
 
-source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/20170209', matching_map=translator)
+source = uf.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/20170209/Transfection C', matching_map=translator)
 
 named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
 
@@ -26,8 +26,9 @@ max_GFP = cf.max_projection(max_mCherry, in_channel = 'GFP', out_channel = 'max_
 
 max_DAPI = cf.sum_projection(max_GFP, in_channel = 'DAPI', out_channel = 'sum_DAPI')
 
-binarized_nuclei = cf.robust_binarize(max_DAPI, in_channel = 'sum_DAPI', out_channel = 'nuclei', _dilation=0,
-                                      heterogeity_size=5, feature_size=50)
+# smoothed_DAPI = cf.smooth_2d(max_DAPI, in_channel = 'sum_DAPI', smoothing_px=.5)
+
+binarized_nuclei = cf.robust_binarize(max_DAPI, in_channel = 'sum_DAPI', out_channel = 'nuclei', _dilation=0, heterogeity_size=50, feature_size=50)
 
 segmented_nuclei = cf.label_and_correct(binarized_nuclei, in_channel = ['nuclei', 'sum_DAPI'], out_channel = 'nuclei',min_px_radius=15, min_intensity=20)
 
