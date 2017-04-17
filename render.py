@@ -260,31 +260,30 @@ def Kristen_render(name_pattern,
                    mCherry_orig, output,
                    save=False, directory_to_save_to='verification'):
     labels, _ = ndi.label(extranuclear_mCherry_pad)
-    plt.figure(figsize=(26.0, 15.0))
-    plt.title('Kristen\'s Data')
-    plt.suptitle(name_pattern)
-
-    main_ax = plt.subplot(211)
-    plt.subplot(211, sharex=main_ax, sharey=main_ax)
-    plt.title('mCherry nucleus/cell intensity')
-    im = plt.imshow(extranuclear_mCherry_pad, interpolation='nearest', cmap='hot')
-    plt.colorbar(im)
-    plt.subplot(212, sharex=main_ax, sharey=main_ax)
-    plt.title('mCherry')
-    plt.imshow(mCherry, interpolation='nearest')
-    plt.contour(extranuclear_mCherry_pad, [0.5], colors = 'k')
+    # plt.figure(figsize=(26.0, 15.0))
+    # plt.title('Kristen\'s Data')
+    # plt.suptitle(name_pattern)
+    #
+    # main_ax = plt.subplot(221)
+    # plt.subplot(221, sharex=main_ax, sharey=main_ax)
+    # plt.title('mCherry Binary')
+    # im = plt.imshow(extranuclear_mCherry_pad, interpolation='nearest', cmap='hot')
+    # plt.colorbar(im)
+    # plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    # plt.title('mCherry')
+    # plt.imshow(mCherry, interpolation='nearest')
+    # plt.contour(extranuclear_mCherry_pad, [0.5], colors = 'k')
     # plt.show()
 
-    plt.figure()
-    labels, _ = ndi.label(extranuclear_mCherry_pad)
+    # plt.figure()
+    # labels, _ = ndi.label(extranuclear_mCherry_pad)
     unique_segmented_cells_labels = np.unique(labels)[1:]
-    mCherry_2 = np.zeros_like(mCherry)
+    mCherry_cutoff = np.zeros_like(mCherry)
     qualifying_cell_label = []
-    qualifying_avg_intensity = []
     qualifying_regression_stats = []
 
     for cell_label in unique_segmented_cells_labels:
-
+        mCherry_2 = np.zeros_like(mCherry)
         my_mask = labels == cell_label
         average_apply_mask = np.mean(mCherry[my_mask])
         intensity = np.sum(mCherry[my_mask])
@@ -314,25 +313,59 @@ def Kristen_render(name_pattern,
             regression_results = stats.linregress(GFP_1d, mCherry_1d)
 
             mCherry_2[my_mask] = mCherry[my_mask]
+            mCherry_cutoff[my_mask] = mCherry[my_mask]
+            qualifying_cell_label.append(cell_label)
+            qualifying_regression_stats.append((regression_results[0], regression_results[2], regression_results[3]))
+            print name_pattern
+            print name_pattern.split(' ')[-1]
+            with open(output, 'ab') as output_file:
+                writer = csv_writer(output_file, delimiter='\t')
+                writer.writerow([name_pattern, cell_label, average_3d_GFP, median_3d_GFP, std_3d_GFP, average_nonqualifying_3d_GFP, median_nonqualifying_3d_GFP, std_nonqualifying_3d_GFP, regression_results[0], regression_results[2], regression_results[3]])
 
+            plt.figure(figsize=(26.0, 15.0))
+            plt.title('Kristen\'s Data')
+            plt.suptitle(name_pattern)
+
+            main_ax = plt.subplot(221)
+            plt.subplot(221, sharex=main_ax, sharey=main_ax)
+            plt.title('mCherry Binary')
+            im = plt.imshow(extranuclear_mCherry_pad, interpolation='nearest', cmap = 'hot')
+            plt.colorbar(im)
+            plt.subplot(222, sharex=main_ax, sharey=main_ax)
+            plt.title('mCherry')
+            plt.imshow(mCherry, interpolation='nearest')
+            plt.contour(extranuclear_mCherry_pad, [0.5], colors='k')
+            plt.subplot(223)
             dplt.better2D_desisty_plot(GFP_1d, mCherry_1d)
             plt.title('mCherry Intensity as a Function of GFP Voxel')
             plt.xlabel('GFP Voxel')
             plt.ylabel('mCherry Intensity')
-            qualifying_cell_label.append(cell_label)
-            qualifying_regression_stats.append((regression_results[0], regression_results[2], regression_results[3]))
-            with open(output, 'ab') as output_file:
-                writer = csv_writer(output_file, delimiter='\t')
-                writer.writerow([group_id, cell_label, average_3d_GFP, median_3d_GFP, std_3d_GFP, average_nonqualifying_3d_GFP, median_nonqualifying_3d_GFP, std_nonqualifying_3d_GFP, regression_results[0], regression_results[2], regression_results[3]])
+            plt.subplot(224, sharex=main_ax, sharey=main_ax)
+            plt.title('mCherry-cutoff applied')
+            plt.imshow(mCherry_2, interpolation='nearest')
 
-    plt.title('mCherry-cutoff applied')
-    plt.imshow(mCherry_2, interpolation='nearest')
+            if not save:
+                plt.show()
 
+            else:
+                name_puck = directory_to_save_to + '/' + 'Kristen-' + name_pattern+ '_cell' + str(cell_label)+ '.png'
+                plt.savefig(name_puck)
+                plt.close()
+    plt.figure(figsize=(26.0, 15.0))
+    main_ax = plt.subplot(121)
+    plt.subplot(121, sharex=main_ax, sharey=main_ax)
+    plt.suptitle('mCherry Before and After Qualifying Cell Cutoff is Applied')
+    plt.title('mCherry')
+    im = plt.imshow(mCherry, interpolation='nearest')
+    plt.colorbar(im)
+    plt.subplot(122, sharex=main_ax, sharey=main_ax)
+    plt.title('mCherry')
+    plt.imshow(mCherry_cutoff, interpolation='nearest')
     if not save:
         plt.show()
 
     else:
-        name_puck = directory_to_save_to+'/'+'Kristen-'+name_pattern+'.png'
+        name_puck = directory_to_save_to + '/' + 'Kristen-' + name_pattern + 'cutoff_app' + '.png'
         plt.savefig(name_puck)
         plt.close()
 

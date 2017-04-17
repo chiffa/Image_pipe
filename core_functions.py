@@ -388,6 +388,7 @@ def random_walker_binarize(base_image, _dilation=0):
 # To try: multiscale percentile edge finding.
 @generator_wrapper(in_dims=(2,), out_dims=(2,))
 def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=50):
+
     if np.percentile(base_image, 99) < 0.20:
         if np.percentile(base_image, 99) > 0:
             mult = 0.20 / np.percentile(base_image, 99)  # poissonean background assumptions
@@ -405,10 +406,9 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
     selem2 = disk(feature_size)
     local_otsu = rank.otsu(smooth_median, selem2)
     uniform_median_otsu = rank.otsu(uniform_median, selem2)
-
     clustering_markers[smooth_median < local_otsu * 0.9] = 1
     clustering_markers[smooth_median > local_otsu * 1.1] = 2
-
+    # dbg.random_walker_debug(smooth_median, clustering_markers)
     binary_labels = random_walker(smooth_median, clustering_markers, beta=10, mode='bf') - 1
 
     if _dilation:
@@ -417,7 +417,7 @@ def robust_binarize(base_image, _dilation=0, heterogeity_size=10, feature_size=5
 
     # dbg.robust_binarize_debug(base_image, smooth_median, smooth_median, local_otsu, clustering_markers,
     #                           binary_labels, uniform_median, uniform_median_otsu)
-    # dbg.robust_binarize_debug(base_image, binary_labels)
+    # dbg.robust_binarize_debug(binary_labels, base_image)
 
 
         # dbg.voronoi_debug(binary_labels, local_maxi, dist, segmented_cells_labels)
@@ -503,7 +503,7 @@ def in_contact(mask1, mask2, distance=10):
     for label in range(1, tot2+1):
         if np.any(intersection[labeled_mask2 == label]):
             in_contact2[labeled_mask2 == label] = 1
-    dbg.in_contact_debug(in_contact1, in_contact2)
+    # dbg.in_contact_debug(in_contact1, in_contact2)
     print 'in contact 1', in_contact1
     print 'in contact 2', in_contact2
     return in_contact1, in_contact2
@@ -559,7 +559,7 @@ def label_and_correct(binary_channel, value_channel, min_px_radius=3, min_intens
         label_mean = np.mean(value_channel[labeled_field == label])
         if px_radius < min_px_radius or total_intensity < min_intensity or label_mean < mean_diff*background_mean:
             labeled_field[labeled_field == label] = 0
-
+    # dbg.label_and_correct_debug(labeled_field)
     return labeled_field
 
 

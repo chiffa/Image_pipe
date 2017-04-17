@@ -191,9 +191,6 @@ def improved_watershed_debug(segmented_cells_labels, mcherry):
     plt.subplot(122, sharex=main_ax, sharey=main_ax)
     plt.title('projected mCherry')
     plt.imshow(mcherry, interpolation='nearest', cmap='gray')
-
-    # plt.subplot(223, sharex=main_ax, sharey=main_ax)
-    # plt.title('Superimposed')
     plt.imshow(segmented_cells_labels, interpolation='nearest', alpha= 0.3)
 
 
@@ -317,3 +314,15 @@ def in_contact_debug(ic1, ic2):
     plt.title('GFP')
     plt.imshow(ic2, interpolation='nearest', cmap='gray')
     plt.show()
+
+def label_and_correct_debug(segmented):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.title('Label and Correct')
+    plt.imshow(segmented)
+
+def random_walker_debug(p1, p2):
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(p1)
+    plt.subplot(212)
+    plt.plot(p2)
