@@ -7,6 +7,7 @@ import logging
 import os
 import csv
 
+import supporting_tools
 
 logger = logging.getLogger('Default Debug Logger')
 logger.setLevel(logging.DEBUG)
@@ -53,7 +54,7 @@ def Linhao_traverse(main_root,
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
 
-                    prefix = cf.split_and_trim(current_location, main_root)
+                    prefix = supporting_tools.split_and_trim(current_location, main_root)
 
                     img_codename = img.split(' ')[0].split('_')
                     color = matching_map[img_codename[-1]]
@@ -142,7 +143,7 @@ def Linhao_traverse(main_root,
             continue
         channels = []
         for color in color_set:
-            channels.append(cf.tiff_stack_2_np_arr(color))
+            channels.append(supporting_tools.tiff_stack_2_np_arr(color))
         print "name pattern", name_pattern
         print 'channels', channels
         yield name_pattern, tags_dict[name_pattern], channels
@@ -177,7 +178,7 @@ def Akshay_traverse(main_root):
         if files:
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                    prefix = cf.split_and_trim(current_location, main_root)
+                    prefix = supporting_tools.split_and_trim(current_location, main_root)
 
                     img_codename = [img.split('.')[0]]
                     name_pattern = ' - '.join(prefix + img_codename)
@@ -185,7 +186,7 @@ def Akshay_traverse(main_root):
                     matched_images.append((name_pattern, group_by, os.path.join(current_location, img)))
 
     for name_pattern, group_by, image_location in matched_images:
-        stack = cf.tiff_stack_2_np_arr(image_location)
+        stack = supporting_tools.tiff_stack_2_np_arr(image_location)
         stack = np.rollaxis(stack[0, :, :, :], 2)  # on the data where channels have not been split into z stacks
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
@@ -212,7 +213,7 @@ def xi_traverse(main_root, matching_map=None):
     for current_location, sub_directories, files in os.walk(main_root):
         for img in files:
             if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                prefix = cf.split_and_trim(current_location, main_root)
+                prefix = supporting_tools.split_and_trim(current_location, main_root)
 
                 pre_name = '-'.join(img.split('-')[1:])[:-4]
                 # print pre_name[-10:]
@@ -231,7 +232,7 @@ def xi_traverse(main_root, matching_map=None):
             for color, z_position_dict in color_dict.iteritems():
                 z_collector = []
                 for z_position, file_name in sorted(z_position_dict.items()):
-                    z_collector.append(cf.tiff_stack_2_np_arr(file_name)[0, :, :])
+                    z_collector.append(supporting_tools.tiff_stack_2_np_arr(file_name)[0, :, :])
                 channels[color] = np.array(z_collector)
 
             yield name_pattern, str(time_stamp), channels
@@ -248,7 +249,7 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
             if files:
                 for img in files:
                     if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                        prefix = cf.split_and_trim(current_location, main_root)
+                        prefix = supporting_tools.split_and_trim(current_location, main_root)
                         img_codename = [img.split('.')[0]]
 
 
@@ -347,8 +348,8 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
         channels = []
         plot_list = []
         for color in color_set:
-            channels.append(cf.tiff_stack_2_np_arr(color))
-            plot_list.append(cf.tiff_stack_2_np_arr(color))
+            channels.append(supporting_tools.tiff_stack_2_np_arr(color))
+            plot_list.append(supporting_tools.tiff_stack_2_np_arr(color))
 
 #         plt.figure(figsize=(20.0, 15.0))
 #         plt.suptitle('Projected DAPI. GFP, mCherry')

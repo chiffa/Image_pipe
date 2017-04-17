@@ -1,12 +1,14 @@
 import os
 import numpy as np
 from matplotlib import pyplot as plt
-from core_functions import generator_wrapper, safe_dir_create
+
+import supporting_tools
+from core_functions import generator_wrapper
+from supporting_tools import safe_dir_create
 from csv import writer as csv_writer
 import scipy
 from scipy import ndimage as ndi
 from scipy import stats
-import density_plot as dplt
 import core_functions as cf
 from chiffatools.dataviz import better2D_desisty_plot
 from scipy.stats import linregress
@@ -345,8 +347,8 @@ def Kristen_render(name_pattern,
 
         if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
 
-            GFP_limited_to_cell_mask = cf._3d_stack_2d_filter(GFP_orig, my_mask)
-            mCherry_limited_to_cell_mask = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+            GFP_limited_to_cell_mask = supporting_tools._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_limited_to_cell_mask = supporting_tools._3d_stack_2d_filter(mCherry_orig, my_mask)
 
             qualifying_3d_GFP = GFP_limited_to_cell_mask[mCherry_limited_to_cell_mask>50]
             average_3d_GFP = np.mean(qualifying_3d_GFP)
@@ -364,8 +366,8 @@ def Kristen_render(name_pattern,
             percent_qualifying_over_total_GFP = sum_qualifying_GFP/sum_total_GFP
             # report the percentage too or sums are sufficient?
 
-            GFP_orig_qualifying = cf._3d_stack_2d_filter(GFP_orig, my_mask)
-            mCherry_orig_qualifying = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+            GFP_orig_qualifying = supporting_tools._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_orig_qualifying = supporting_tools._3d_stack_2d_filter(mCherry_orig, my_mask)
             mCherry_1d = mCherry_orig_qualifying[mCherry_orig_qualifying > 50]
             GFP_1d = GFP_orig_qualifying[mCherry_orig_qualifying>50]
             regression_results = stats.linregress(GFP_1d, mCherry_1d)
@@ -399,7 +401,7 @@ def Kristen_render(name_pattern,
             plt.imshow(mCherry, interpolation='nearest')
             plt.contour(extranuclear_mCherry_pad, [0.5], colors='k')
             plt.subplot(223)
-            dplt.better2D_desisty_plot(GFP_1d, mCherry_1d)
+            supporting_tools.better2D_desisty_plot(GFP_1d, mCherry_1d)
             plt.title('mCherry Intensity as a Function of GFP Voxel')
             plt.xlabel('GFP Voxel')
             plt.ylabel('mCherry Intensity')
