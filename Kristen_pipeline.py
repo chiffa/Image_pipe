@@ -1,15 +1,13 @@
 import kristen_traversal as uf
 import core_functions as cf
-from matplotlib import pyplot as plt
 import render as rdr
 from csv import writer as csv_writer
-import debug_renders as dbg
-import numpy as np
 from time import time
 
 # Goal of this pipeline
-#     1. Detect the number of cells that were properly stained
-#     2. For the successfully stained cells, determine how much GFP is located inside the mitochondria
+#     1. Detect the number of cells that were properly stained/transfected
+#             quantification only for successfully transfected cells
+#     2. For the successfully stained cells, determine how much GFP is located inside the mCHerry-stained mitochondria
 
 
 translator = {'C1':0,
