@@ -1,5 +1,3 @@
-# following function from chiffatools2(Github)
-
 from matplotlib import pyplot as plt
 from scipy import histogram2d
 import numpy as np

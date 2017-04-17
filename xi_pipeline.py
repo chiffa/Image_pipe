@@ -1,6 +1,5 @@
 import traversals as uf
 import core_functions as cf
-from matplotlib import pyplot as plt
 import render as rdr
 from csv import writer as csv_writer
 from time import time, strftime

@@ -71,7 +71,6 @@ def voronoi_debug(base, points, labels, watershed):
     plt.imshow(watershed, interpolation='nearest', cmap=plt.cm.spectral, vmin=0)
 
 
-
 def filter_labels_debug(labels, binary, result):
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle('filter labels')
@@ -87,7 +86,6 @@ def filter_labels_debug(labels, binary, result):
     plt.subplot(223, sharex=main_ax, sharey=main_ax)
     plt.title('result')
     plt.imshow(result, interpolation='nearest', cmap=plt.cm.spectral, vmin=0)
-
 
 
 def weight_sum_zero_debug(label_mask, img_codename):
@@ -119,6 +117,7 @@ def skeleton_debug(label_mask, skeleton, float_surface):
     plt.title('float surface')
     plt.imshow(float_surface, interpolation='nearest', cmap='gray')
 
+
 def max_projection_debug(current_image):
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle('current image')
@@ -126,6 +125,7 @@ def max_projection_debug(current_image):
     plt.title('current')
     plt.imshow(current_image, interpolation='nearest', cmap=plt.cm.spectral)
     plt.show()
+
 
 def weight_sum_debug_see_full_image(mitochondria, proj_mCh, skeleton, radius_mask, support_mask, mito_classes, final_classes, cell_labels, name_pattern):
 
@@ -187,7 +187,6 @@ def improved_watershed_debug(segmented_cells_labels, mcherry):
     plt.title('segmented labels')
     plt.imshow(segmented_cells_labels, interpolation='nearest', cmap=plt.cm.spectral)
     cbar = plt.colorbar()
-    cbar
     plt.subplot(122, sharex=main_ax, sharey=main_ax)
     plt.title('projected mCherry')
     plt.imshow(mcherry, interpolation='nearest', cmap='gray')
@@ -195,6 +194,7 @@ def improved_watershed_debug(segmented_cells_labels, mcherry):
 
 
     plt.savefig('watershed_debug_image')
+
 
 def improved_watershed_plot_intensities(unique_segmented_cell_labels, average_apply_mask):
     plt.figure()
@@ -208,6 +208,7 @@ def improved_watershed_plot_intensities(unique_segmented_cell_labels, average_ap
     my_xticks = unique_segmented_cell_labels
     plt.xticks(x, my_xticks)
 
+
 def plot_GFP_as_a_function_of_cell_number(average_apply_mask):
     plt.figure()
     plt.title("GFP as a Function of Cell Number")
@@ -217,6 +218,7 @@ def plot_GFP_as_a_function_of_cell_number(average_apply_mask):
     y = average_apply_mask
     ax.plot(y)
     plt.show()
+
 
 def label_based_aq(ar):
     plt.figure()
@@ -228,6 +230,7 @@ def label_based_aq(ar):
     y = ar
     ax.plot(y)
     plt.show()
+
 
 def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
     xdat = np.max(xdat, axis=0)
@@ -257,6 +260,7 @@ def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
         interpolation='none')
     plt.plot(xdat1, ydat1, '.')
     plt.show()
+
 
 def Kristen_robust_binarize(binary_labels, base_image):
     print "reached Kristen robust binarize debug"
@@ -302,6 +306,7 @@ def Kristen_robust_binarize(binary_labels, base_image):
     plt.title('pixel values')
     # plt.show
 
+
 def in_contact_debug(ic1, ic2):
     plt.figure(figsize=(20.0, 15.0))
     plt.suptitle('In Contact')
@@ -315,10 +320,12 @@ def in_contact_debug(ic1, ic2):
     plt.imshow(ic2, interpolation='nearest', cmap='gray')
     plt.show()
 
+
 def label_and_correct_debug(segmented):
     plt.figure(figsize=(20.0, 15.0))
     plt.title('Label and Correct')
     plt.imshow(segmented)
+
 
 def random_walker_debug(p1, p2):
     plt.figure()
@@ -326,3 +333,42 @@ def random_walker_debug(p1, p2):
     plt.plot(p1)
     plt.subplot(212)
     plt.plot(p2)
+
+
+def DAPI_debug(stabilized, smoothed):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('DAPI Debug')
+
+    #
+    # main_ax = plt.subplot(221)
+    # plt.title('stabilized')
+    # stabilized_2 = np.max(stabilized, axis=0)
+    # plt.imshow(stabilized_2, interpolation='nearest', cmap='gray')
+    #
+    # plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    # plt.title('smoothed')
+    # smoothed_2 = np.max(smoothed, axis=0)
+    # plt.imshow(smoothed_2, interpolation='nearest', cmap='gray')
+    #
+    # plt.show()
+    #
+
+
+def nuclei_debug(binarized, segmented):
+    plt.figure(figsize=(20.0, 15.0))
+    plt.suptitle('DAPI Debug')
+    print binarized
+
+    main_ax = plt.subplot(221)
+    plt.title('binzarized nuclei')
+    binarized_2 = np.max(binarized, axis=0)
+    plt.imshow(binarized_2, interpolation='nearest', cmap='gray')
+
+    plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    plt.title('segmented nuclei')
+    segmented_2 = np.max(segmented, axis=0)
+    plt.imshow(segmented, interpolation='nearest', cmap='gray')
+
+    plt.show()
+
+# problem: you're trying to graph a generator, not a 3-D numpy array
