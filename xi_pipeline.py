@@ -9,11 +9,11 @@ translator = {'C2': 0,
               'C1': 1
               }
 
-# source = uf.xi_traverse('L:\\Users\\xi\\Quantification of colocalization',
-#                         matching_map=translator)
-
-source = uf.xi_traverse('L:\\Users\\andrei\\2017\\Xi Data',
+source = uf.xi_traverse('L:\\Users\\xi\\Quantification of colocalization',
                         matching_map=translator)
+
+# source = uf.xi_traverse('L:\\Users\\andrei\\2017\\Xi Data',
+#                         matching_map=translator)
 
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
 
@@ -69,7 +69,16 @@ pre_render = rdr.xi_pre_render(average_GFP,
                                          'average_GFP_pad', 'projected_mCh',
                                          'mCherry', 'GFP', 'group id'],
                                 out_channel='_',
-                                save=False)
+                                save=True)
+
+# since the resolution for the mitochondria is so much lower when compared to yeast cells, we will
+# have to perform a bit more straightforward of cutting and
+
+with open('xi_analys_results.csv', 'wb') as output_file:
+        writer = csv_writer(output_file)
+        writer.writerow(['file', 'time', 'correlation coeff',
+                         'median GFP', 'average GFP', 'linreg slope', 'linreg rvalue',
+                         'linreg pvalue'])
 
 prev_time = time()
 
