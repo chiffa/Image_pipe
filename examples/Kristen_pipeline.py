@@ -1,8 +1,6 @@
-import traversals as uf
-import core_functions as cf
-import render as rdr
-from csv import writer as csv_writer
-from time import time
+import examples.kristen_support
+import imagepipe.traversals as uf
+from imagepipe import core_functions as cf, traversals
 
 # Goal of this pipeline
 #     1. Detect the number of cells that were properly stained/transfected
@@ -31,15 +29,15 @@ mCherry_o_n_segmented = cf.robust_binarize(smoothed_mCherry,
                                        out_channel='max_mCherry_binary',
                                        heterogeity_size=10, feature_size=250)
 
-running_render = rdr.Kristen_render(mCherry_o_n_segmented, in_channel=['name pattern',
+running_render = examples.kristen_support.Kristen_render(mCherry_o_n_segmented, in_channel=['name pattern',
                                                                 'group id',
                                                                'max_mCherry',
                                                                'max_mCherry_binary',
                                                                'GFP',
                                                                'mCherry'],
-                                    out_channel='_',
-                                    output='Kristen_Transfection_B_and_C_GFP_analysis_results.csv',
-                                    save=True)
+                                                         out_channel='_',
+                                                         output='Kristen_Transfection_B_and_C_GFP_analysis_results.csv',
+                                                         save=True)
 
 #
 # Kristen_summary = rdr.Kristen_summarize_a(running_render, in_channel = ['name pattern', 'q_mean','q_median', 'q_std', 'nq_mean', 'nq_median', 'nq_std', 'slope', 'r2', 'p'],

@@ -819,3 +819,4 @@ def locally_normalize(channel, local_xy_pool=5, local_z_pool=2):
 
     return np.array(new_slice_collector)
 
+safe_dir_create('verification')  #TODO: might not be the best location to write this down

@@ -1,12 +1,12 @@
-import traversals as uf
-import core_functions as cf
-from matplotlib import pyplot as plt
-import render as rdr
 from csv import writer as csv_writer
+
+import examples.akshay_support
+import imagepipe.traversals as uf
+from imagepipe import core_functions as cf
 
 # source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\tiff")
 # source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\11-21-16 RPE IF untreat mps nut images")
-source = uf.Akshay_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Common/AKN/IF test images nuc vs cyto/11-21-16 RPE IF untreat mps nut - Analysis run')
+source = examples.akshay_support.Akshay_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Common/AKN/IF test images nuc vs cyto/11-21-16 RPE IF untreat mps nut - Analysis run')
 print 'source', source
 named_source = uf.name_channels(source, ['DAPI', 'p53', 'p21'])
 
@@ -92,21 +92,21 @@ p21_en_eq = cf.label_based_aq(p21_o_n_filtered,
                               in_channel=['extra_nuclear_p21', 'p21_o_n'],
                               out_channel=['av_en_p21', 'av_en_p21_pad'])
 
-running_render = rdr.akshay_render(p21_en_eq,
-                                   in_channel=['name pattern', 'DAPI', 'p53', 'p21',
+running_render = examples.akshay_support.akshay_render(p21_en_eq,
+                                                       in_channel=['name pattern', 'DAPI', 'p53', 'p21',
                                                'nuclei', 'vor_segment',
                                                'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad',
                                                'extra_nuclear_p21', 'nuc_p21_pad', 'av_en_p21_pad'],
-                                   out_channel='_',
-                                   save=False)
+                                                       out_channel='_',
+                                                       save=False)
 
 # after checking this pipeline, replace False with True
 
-summary = rdr.akshay_summarize(running_render,
-                               in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',
+summary = examples.akshay_support.akshay_summarize(running_render,
+                                                   in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',
                                            'nuc_p21', 'av_en_p21'],
-                               out_channel='_',
-                               output='akshay_analysis_results.csv')
+                                                   out_channel='_',
+                                                   output='akshay_analysis_results.csv')
 
 with open('akshay_analysis_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)

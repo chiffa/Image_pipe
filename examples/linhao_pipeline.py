@@ -1,9 +1,9 @@
-import traversals as uf
-import core_functions as cf
-from matplotlib import pyplot as plt
-import render as rdr
 from csv import writer as csv_writer
 from time import time, strftime
+
+import examples.linhao_support
+import imagepipe.traversals as uf
+from imagepipe import core_functions as cf
 
 # different debugger injection can be performed by doing a
 # import module_of_interest
@@ -17,8 +17,8 @@ translator = {'w1488': 0,
 # source = uf.Linhao_traverse("L:\\Users\\jerry\\Image\\ForAndrei\\Ry233282285",
 #                             matching_map=translator)
 
-source = uf.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/SSAmutant",
-                            matching_map=translator)
+source = examples.linhao_support.Linhao_traverse("/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/jerry/Image/ForAndrei/SSAmutant",
+                                                 matching_map=translator)
 
 # that architecture actually removes the need for the debug line
 # that can be incorporated into the traversal
@@ -120,35 +120,35 @@ gfp_mqvi_tiled = cf.paint_from_mask(supp_mask_tiled, 'per_cell', 'gfp_mqvi')
 
 mch_mqvi_tiled = cf.paint_from_mask(gfp_mqvi_tiled, 'per_cell', 'mch_mqvi')
 
-gfp_rendered = rdr.linhao_gfp_render(mch_mqvi_tiled,
-                                     in_channel=['name pattern',
+gfp_rendered = examples.linhao_support.linhao_gfp_render(mch_mqvi_tiled,
+                                                         in_channel=['name pattern',
                                                  'projected_GFP', 'qualifying_GFP',
                                                  'pre_cell_labels',
                                                  'average_GFP_pad', 'average_GFP',
                                                  'pred_gpf_av', 'gfp_std', 'non_outliers',
                                                  'cell_labels', 'projected_mCh'],
-                                     out_channel='_',
-                                     save=True)
+                                                         out_channel='_',
+                                                         save=True)
 
-mqvi_render = rdr.linhao_mqvi_render(gfp_rendered,
-                                    in_channel=['name pattern', 'mito_binary', 'cell_labels',
+mqvi_render = examples.linhao_support.linhao_mqvi_render(gfp_rendered,
+                                                         in_channel=['name pattern', 'mito_binary', 'cell_labels',
                                                 'projected_GFP', 'projected_mCh',
                                                 'gfp_mqvi', 'mch_mqvi'],
-                                    out_channel='_',
-                                    save=True)
+                                                         out_channel='_',
+                                                         save=True)
 
 
 
-mch_render = rdr.linhao_mch_render(mqvi_render,
-                                        in_channel=['name pattern', 'projected_mCh', 'mito_binary',
+mch_render = examples.linhao_support.linhao_mch_render(mqvi_render,
+                                                       in_channel=['name pattern', 'projected_mCh', 'mito_binary',
                                              'mCh_skeleton', 'classification_mask', 'final_classification',
                                              'cell_labels', 'radius_mask', 'support_mask'],
-                                        out_channel='_',
-                                        save=True)
+                                                       out_channel='_',
+                                                       save=True)
 
-per_cell_render = rdr.linhao_summarize(mch_render, output='linhao_analys_results.csv')
+per_cell_render = examples.linhao_support.linhao_summarize(mch_render, output='linhao_analys_results.csv')
 
-cell_count = rdr.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
+cell_count = examples.linhao_support.linhao_secondary_summarize(per_cell_render, output='linhao_raw counts.csv')
 
 with open('linhao_analys_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)
