@@ -1,0 +1,7 @@
+numpy
+scipy
+matplotlib
+scikit-learn
+cython
+scikit-image
+pillow

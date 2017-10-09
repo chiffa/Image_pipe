@@ -1,0 +1,48 @@
+language: python
+
+sudo: false
+
+python:
+    - "2.7"
+
+addons:
+  apt:
+    packages:
+    - build-essential
+
+# Setup anaconda
+before_install:
+  # - sudo apt-get update
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - which pip
+
+install:
+    # - sudo apt-get -qq install build-essential libsuitesparse-dev
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
+    - source activate test-environment
+    - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage pylint scikit-image pillow
+    - pip install coveralls pyflakes pep8-naming mccabe flake8 codecov
+    - pip install -r requirements.txt
+
+script:
+    - python -m unittests.TestAll
+    - coverage run -m unittests.TestAll
+
+after_success:
+    - codecov
+    - flake8 --ignore=E501,N806,E12 --statistics --show-source bioflow
+    - flake8 --select=C --max-complexity 10 imagepipe
+
+notifications:
+    email: false
