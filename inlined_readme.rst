@@ -14,7 +14,7 @@ primitive functions and abstractions (pipe, tiling, per-segment processing, etc.
 This project is currently in alpha development, hence poorly documented, sparsely tested
 and prone to rapid changes.
 
-
+The documentation is available `here <https://image-pipe.readthedocs.io/en/latest/>`__.
 
 
 .. |License Type| image:: https://img.shields.io/badge/license-BSD3-blue.svg

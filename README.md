@@ -25,6 +25,9 @@ and abstractions (pipe, tiling, per-segment processing, etc...).
 This project is currently in alpha development, hence poorly documented,
 sparsely tested and prone to rapid changes.
 
+The documentation is available
+[here](https://image-pipe.readthedocs.io/en/latest/).
+
 > target
 >
 > :   <https://codecov.io/gh/chiffa/Image_pipe>
