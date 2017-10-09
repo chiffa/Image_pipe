@@ -16,7 +16,7 @@ requirements = [
     'PIL',
     'numpy',
     'scipy',
-    'skimage',
+    'scikit-image',
     'matplotlib',
     ]
 
