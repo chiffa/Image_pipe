@@ -28,8 +28,6 @@ def name_channels(stack_group_generator, channel_names):
     :param channel_names:
     :return:
     """
-    print stack_group_generator
-
     for name_pattern, group_ids, channels in stack_group_generator:
         group_dict = {'name pattern': name_pattern,
                       'group id': group_ids}

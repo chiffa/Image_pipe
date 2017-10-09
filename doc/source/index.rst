@@ -27,7 +27,7 @@ API documentation:
 .. toctree::
    :maxdepth: 4
 
-imagepipe
+   imagepipe
 
 Indices and tables
 ==================

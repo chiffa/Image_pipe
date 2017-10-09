@@ -1,6 +1,13 @@
 imagepipe package
 =================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    imagepipe.tools
+
 Submodules
 ----------
 
@@ -40,6 +47,14 @@ imagepipe.traversals module
 ---------------------------
 
 .. automodule:: imagepipe.traversals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+imagepipe.wrapped_functions module
+----------------------------------
+
+.. automodule:: imagepipe.wrapped_functions
     :members:
     :undoc-members:
     :show-inheritance:

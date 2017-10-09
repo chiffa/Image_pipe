@@ -8,6 +8,7 @@ from chiffatools.dataviz import better2D_desisty_plot
 from matplotlib import pyplot as plt
 from scipy.stats import linregress
 
+import imagepipe.wrapped_functions
 from imagepipe import core_functions as cf
 from imagepipe.core_functions import generator_wrapper
 
@@ -32,7 +33,7 @@ def xi_traverse(main_root, matching_map=None):
     for current_location, sub_directories, files in os.walk(main_root):
         for img in files:
             if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                prefix = cf.split_and_trim(current_location, main_root)
+                prefix = imagepipe.wrapped_functions.split_and_trim(current_location, main_root)
 
                 pre_name = '-'.join(img.split('-')[1:])[:-4]
                 # print pre_name[-10:]
@@ -51,7 +52,8 @@ def xi_traverse(main_root, matching_map=None):
             for color, z_position_dict in color_dict.iteritems():
                 z_collector = []
                 for z_position, file_name in sorted(z_position_dict.items()):
-                    z_collector.append(cf.tiff_stack_2_np_arr(file_name)[0, :, :])
+                    z_collector.append(
+                        imagepipe.wrapped_functions.tiff_stack_2_np_arr(file_name)[0, :, :])
                 channels[color] = np.array(z_collector)
 
             yield name_pattern, str(time_stamp), channels

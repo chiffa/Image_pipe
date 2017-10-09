@@ -1,43 +1,23 @@
+from functools import wraps
+
 import numpy as np
-import os
-from PIL import Image
-import traceback
-from matplotlib import pyplot as plt
-from scipy.ndimage.filters import gaussian_filter
-from scipy import stats
-from collections import defaultdict
-from csv import writer
-from skimage.segmentation import random_walker
-from skimage.morphology import closing, dilation
 from scipy import ndimage as ndi
-from scipy.signal import medfilt2d
-from skimage.morphology import watershed
+from scipy import stats
+from scipy.ndimage.filters import gaussian_filter
 from skimage.feature import peak_local_max
+from skimage.filters import threshold_otsu, rank, median
+from skimage.morphology import closing, dilation
 from skimage.morphology import disk
 from skimage.morphology import skeletonize, medial_axis
-from skimage.filters import threshold_otsu, rank, median
-from skimage.draw import line_aa
-from scipy.stats import t
-from scipy.stats import ttest_ind
-from itertools import combinations
-from functools import wraps
-import types
-import collections
-import debug_renders as dbg
+from skimage.morphology import watershed
+from skimage.segmentation import random_walker
 
+from imagepipe.tools.helpers import safe_dir_create, PipeArgError, list_not_string
+from imagepipe.wrapped_functions import _3d_stack_2d_filter, _2d_stack_2d_filter
 
 dtype2bits = {'uint8': 8,
               'uint16': 16,
               'uint32': 32}
-
-
-def safe_dir_create(path):
-    if not os.path.isdir(path):
-        os.makedirs(path)
-
-
-class PipeArgError(ValueError):
-    pass
 
 
 def pad_skipping_iterator(secondary_namespace):
@@ -66,24 +46,6 @@ def doublewrap(f):
             return lambda realf: f(realf, *args, **kwargs)
 
     return new_dec
-
-
-def list_not_string(argument):
-    """
-    function that checks if a list is not a string
-
-    credits: http://stackoverflow.com/questions/1055360/how-to-tell-a-variable-is-iterable-but-not-a-string
-
-    :param argument:
-    :return:
-    """
-    if isinstance(argument, collections.Iterable):
-        if isinstance(argument, types.StringTypes):
-            return False
-        else:
-            return True
-    else:
-        raise PipeArgError("Expected a name of channel or list of names. Found: '%s' " % argument)
 
 
 # TODO: add vectorization (same operation for every element in the inputs - smoothing, stabilization)
@@ -151,7 +113,7 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
                     if in_dims[i] and len(name_space[chan].shape) != in_dims[i]:
                         print f.__name__
                         print chan, len(name_space[chan].shape), in_dims[i]
-                        raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s'%
+                        raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s' %
                                            (chan, len(name_space[chan].shape), in_dims[i]))
                     args_puck.append(name_space[chan])
 
@@ -273,45 +235,6 @@ def tile_from_mask(outer_generator, based_on, in_anchor, out_channel=None):
 
         primary_namespace[out_channel] = accumulator
         yield primary_namespace
-
-
-def tiff_stack_2_np_arr(tiff_location):
-    """
-    Loads the image from the tiff stack to a 3D numpy array
-
-    :param tiff_location:
-    :return:
-    """
-    tiff_stack = Image.open(tiff_location)
-    stack = [np.array(tiff_stack)]
-    try:
-        while 1:
-            tiff_stack.seek(tiff_stack.tell() + 1)
-            stack.append(np.array(tiff_stack))
-    except EOFError:
-        pass
-
-    return np.array(stack)
-
-
-def split_and_trim(prefix, main_root):
-    trim_length = len(main_root)
-    if main_root[-1] != os.sep:
-        trim_length += 1
-
-    return prefix[trim_length:].split(os.sep)
-
-
-def _3d_stack_2d_filter(_3d_stack, _2d_filter):
-    new_stack = np.zeros_like(_3d_stack)
-    new_stack[:, _2d_filter] = _3d_stack[:, _2d_filter]
-    return new_stack
-
-
-def _2d_stack_2d_filter(_2d_stack, _2d_filter):
-    new_stack = np.zeros_like(_2d_stack)
-    new_stack[_2d_filter] = _2d_stack[_2d_filter]
-    return new_stack
 
 
 @generator_wrapper(in_dims=(None,))

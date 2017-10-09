@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage as ndi, stats
 
+import imagepipe.wrapped_functions
 from imagepipe import core_functions as cf, density_plot
 from imagepipe.core_functions import generator_wrapper
 
@@ -55,8 +56,8 @@ def Kristen_render(name_pattern,
 
         if (average_apply_mask > .05 or intensity > 300) and pixel > 4000:
 
-            GFP_limited_to_cell_mask = cf._3d_stack_2d_filter(GFP_orig, my_mask)
-            mCherry_limited_to_cell_mask = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+            GFP_limited_to_cell_mask = imagepipe.wrapped_functions._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_limited_to_cell_mask = imagepipe.wrapped_functions._3d_stack_2d_filter(mCherry_orig, my_mask)
 
             qualifying_3d_GFP = GFP_limited_to_cell_mask[mCherry_limited_to_cell_mask>50]
             average_3d_GFP = np.mean(qualifying_3d_GFP)
@@ -74,8 +75,8 @@ def Kristen_render(name_pattern,
             percent_qualifying_over_total_GFP = sum_qualifying_GFP/sum_total_GFP
             # report the percentage too or sums are sufficient?
 
-            GFP_orig_qualifying = cf._3d_stack_2d_filter(GFP_orig, my_mask)
-            mCherry_orig_qualifying = cf._3d_stack_2d_filter(mCherry_orig, my_mask)
+            GFP_orig_qualifying = imagepipe.wrapped_functions._3d_stack_2d_filter(GFP_orig, my_mask)
+            mCherry_orig_qualifying = imagepipe.wrapped_functions._3d_stack_2d_filter(mCherry_orig, my_mask)
             mCherry_1d = mCherry_orig_qualifying[mCherry_orig_qualifying > 50]
             GFP_1d = GFP_orig_qualifying[mCherry_orig_qualifying>50]
             regression_results = stats.linregress(GFP_1d, mCherry_1d)
@@ -109,7 +110,7 @@ def Kristen_render(name_pattern,
             plt.imshow(mCherry, interpolation='nearest')
             plt.contour(extranuclear_mCherry_pad, [0.5], colors='k')
             plt.subplot(223)
-            dplt.better2D_desisty_plot(GFP_1d, mCherry_1d)
+            plt.better2D_desisty_plot(GFP_1d, mCherry_1d)
             plt.title('mCherry Intensity as a Function of GFP Voxel')
             plt.xlabel('GFP Voxel')
             plt.ylabel('mCherry Intensity')
@@ -166,7 +167,7 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
             if files:
                 for img in files:
                     if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                        prefix = cf.split_and_trim(current_location, main_root)
+                        prefix = imagepipe.wrapped_functions.split_and_trim(current_location, main_root)
                         img_codename = [img.split('.')[0]]
 
 
@@ -265,8 +266,8 @@ def Kristen_traverse(main_root, matching_rule='c', matching_map=None):
         channels = []
         plot_list = []
         for color in color_set:
-            channels.append(cf.tiff_stack_2_np_arr(color))
-            plot_list.append(cf.tiff_stack_2_np_arr(color))
+            channels.append(imagepipe.wrapped_functions.tiff_stack_2_np_arr(color))
+            plot_list.append(imagepipe.wrapped_functions.tiff_stack_2_np_arr(color))
 
 #         plt.figure(figsize=(20.0, 15.0))
 #         plt.suptitle('Projected DAPI. GFP, mCherry')

@@ -1,9 +1,11 @@
 [![License
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
-[![Build
-Status](https://travis-ci.org/chiffa/Image_pipe.svg?branch=master)](https://travis-ci.org/chiffa/Image_pipe)
 [![Branch
 status](https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.rst)
+[![Build
+Status](https://travis-ci.org/chiffa/Image_pipe.svg?branch=master)](https://travis-ci.org/chiffa/Image_pipe)
+![Code
+Coverage](https://codecov.io/gh/chiffa/Image_pipe/branch/master/graph/badge.svg)
 [![Code
 Health](https://landscape.io/github/chiffa/Image_pipe/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/Image_pipe/master)
 
@@ -22,3 +24,9 @@ and abstractions (pipe, tiling, per-segment processing, etc...).
 
 This project is currently in alpha development, hence poorly documented,
 sparsely tested and prone to rapid changes.
+
+> target
+>
+> :   <https://codecov.io/gh/chiffa/Image_pipe>
+>
+

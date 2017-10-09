@@ -6,8 +6,11 @@ from imagepipe import core_functions as cf
 
 # source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\tiff")
 # source = uf.Akshay_traverse("L:\\Common\\AKN\\IF test images nuc vs cyto\\11-21-16 RPE IF untreat mps nut images")
-source = examples.akshay_support.Akshay_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Common/AKN/IF test images nuc vs cyto/11-21-16 RPE IF untreat mps nut - Analysis run')
-print 'source', source
+# source_directory = '/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Common/AKN/IF test images nuc vs cyto/11-21-16 RPE IF untreat mps nut - Analysis run'  # because Linux
+# source_directory = "L:\\Common\\AKN\\IF test images nuc vs cyto\\11-21-16 RPE IF untreat mps nut images"  # because Windows
+source_directory = "C:\\Users\\Andrei\Desktop\\tmp\\11-21-16 RPE IF untreat mps nut images"  # because windows and smb are not collaborating today
+
+source = examples.akshay_support.Akshay_traverse(source_directory)
 named_source = uf.name_channels(source, ['DAPI', 'p53', 'p21'])
 
 stablilized_1 = cf.gamma_stabilize(named_source, in_channel='DAPI', min='min', alpha_clean=.5)
