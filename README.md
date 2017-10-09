@@ -4,8 +4,8 @@ Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/ch
 status](https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.rst)
 [![Build
 Status](https://travis-ci.org/chiffa/Image_pipe.svg?branch=master)](https://travis-ci.org/chiffa/Image_pipe)
-![Code
-Coverage](https://codecov.io/gh/chiffa/Image_pipe/branch/master/graph/badge.svg)
+[![Code
+Coverage](https://codecov.io/gh/chiffa/Image_pipe/branch/master/graph/badge.svg)](https://codecov.io/gh/chiffa/Image_pipe)
 [![Code
 Health](https://landscape.io/github/chiffa/Image_pipe/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/Image_pipe/master)
 
@@ -27,9 +27,3 @@ sparsely tested and prone to rapid changes.
 
 The documentation is available
 [here](https://image-pipe.readthedocs.io/en/latest/).
-
-> target
->
-> :   <https://codecov.io/gh/chiffa/Image_pipe>
->
-

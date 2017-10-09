@@ -28,4 +28,4 @@ The documentation is available `here <https://image-pipe.readthedocs.io/en/lates
 .. |Code Health| image::  https://landscape.io/github/chiffa/Image_pipe/master/landscape.svg?style=flat
    :target: https://landscape.io/github/chiffa/Image_pipe/master
 .. |Code Coverage| image:: https://codecov.io/gh/chiffa/Image_pipe/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/chiffa/Image_pipe
+   :target: https://codecov.io/gh/chiffa/Image_pipe
