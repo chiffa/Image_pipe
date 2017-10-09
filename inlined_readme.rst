@@ -1,4 +1,4 @@
-|License Type| |Build Status| |Branch status| |Code Health|
+|License Type| |Branch status| |Build Status| |Code Coverage| |Code Health|
 
 Image Pipe
 ==========
@@ -27,3 +27,5 @@ and prone to rapid changes.
    :target: http://clonedigger.sourceforge.net/
 .. |Code Health| image::  https://landscape.io/github/chiffa/Image_pipe/master/landscape.svg?style=flat
    :target: https://landscape.io/github/chiffa/Image_pipe/master
+.. |Code Coverage| image:: https://codecov.io/gh/chiffa/Image_pipe/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/chiffa/Image_pipe

@@ -1,6 +1,7 @@
 import os
 import unittest
 os.environ['UNITTESTING'] = 'True'
+import imagepipe
 
 
 class HooksConfigTest(unittest.TestCase):

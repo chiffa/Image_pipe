@@ -13,7 +13,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 requirements = [
-    'PIL',
+    'pillow',
     'numpy',
     'scipy',
     'scikit-image',
