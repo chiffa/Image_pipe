@@ -2,7 +2,6 @@ from csv import writer as csv_writer
 from time import time, strftime
 
 import examples.xi_support
-import imagepipe.raw_functions
 import imagepipe.traversals as uf
 import imagepipe.wrapped_functions as wf
 from imagepipe import core_functions as cf

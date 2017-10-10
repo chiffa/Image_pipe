@@ -1,8 +1,7 @@
 import examples.kristen_support
-import imagepipe.raw_functions
 import imagepipe.traversals as uf
 import imagepipe.wrapped_functions as wf
-from imagepipe import core_functions as cf, traversals
+from imagepipe import core_functions as cf
 
 # Goal of this pipeline
 #     1. Detect the number of cells that were properly stained/transfected
@@ -16,7 +15,7 @@ translator = {'C1': 0,
 
 source = examples.kristen_support.Kristen_traverse('/run/user/1000/gvfs/smb-share:server=10.17.0.219,share=common/Users/kristen/Split GFP quant_Andrei/20170209', matching_map=translator)
 
-named_source = uf.name_channels(source, ['DAPI','GFP', 'mCherry'])
+named_source = uf.name_channels(source, ['DAPI', 'GFP', 'mCherry'])
 
 max_mCherry = wf.max_projection(named_source, in_channel='mCherry', out_channel='max_mCherry')
 
