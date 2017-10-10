@@ -43,6 +43,14 @@ imagepipe.iterate_and_check_img_files module
     :undoc-members:
     :show-inheritance:
 
+imagepipe.raw_functions module
+------------------------------
+
+.. automodule:: imagepipe.raw_functions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 imagepipe.traversals module
 ---------------------------
 

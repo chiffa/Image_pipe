@@ -8,6 +8,8 @@ import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 
+import imagepipe.raw_functions
+import imagepipe.tools.helpers
 import imagepipe.wrapped_functions
 from imagepipe import core_functions as cf
 from imagepipe.core_functions import generator_wrapper
@@ -225,7 +227,7 @@ def Linhao_traverse(main_root,
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img and 'w' in img:
 
-                    prefix = imagepipe.wrapped_functions.split_and_trim(current_location, main_root)
+                    prefix = imagepipe.raw_functions.split_and_trim(current_location, main_root)
 
                     img_codename = img.split(' ')[0].split('_')
                     color = matching_map[img_codename[-1]]
@@ -314,7 +316,7 @@ def Linhao_traverse(main_root,
             continue
         channels = []
         for color in color_set:
-            channels.append(imagepipe.wrapped_functions.tiff_stack_2_np_arr(color))
+            channels.append(imagepipe.tools.helpers.tiff_stack_2_np_arr(color))
         print "name pattern", name_pattern
         print 'channels', channels
         yield name_pattern, tags_dict[name_pattern], channels

@@ -2,7 +2,9 @@ from csv import writer as csv_writer
 from time import time, strftime
 
 import examples.linhao_support
+import imagepipe.raw_functions
 import imagepipe.traversals as uf
+import imagepipe.wrapped_functions as wf
 from imagepipe import core_functions as cf
 
 # different debugger injection can be performed by doing a
@@ -25,47 +27,47 @@ source = examples.linhao_support.Linhao_traverse("/run/user/1000/gvfs/smb-share:
 
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
 
-stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP')
-smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP')
+stabilized_GFP = wf.gamma_stabilize(named_source, in_channel='GFP')
+smoothed_GFP = wf.smooth(stabilized_GFP, in_channel='GFP')
 
-stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
+stabilized_mCh = wf.gamma_stabilize(smoothed_GFP, in_channel='mCherry')
 
-projected_GFP = cf.sum_projection(stabilized_mCh,
-                                  in_channel='GFP',
-                                  out_channel='projected_GFP')
+projected_GFP = wf.sum_projection(stabilized_mCh,
+                                                       in_channel='GFP',
+                                                       out_channel='projected_GFP')
 
-projected_mCh = cf.max_projection(projected_GFP,
-                                  in_channel='mCherry',
-                                  out_channel='projected_mCh')
+projected_mCh = wf.max_projection(projected_GFP,
+                                                       in_channel='mCherry',
+                                                       out_channel='projected_mCh')
 
 
-binarized_GFP = cf.robust_binarize(projected_mCh,
-                                   in_channel='projected_mCh',
-                                   out_channel='cell_tags')
+binarized_GFP = wf.robust_binarize(projected_mCh,
+                                                        in_channel='projected_mCh',
+                                                        out_channel='cell_tags')
 
-segmented_GFP = cf.improved_watershed(binarized_GFP,
-                                      in_channel=['cell_tags', 'projected_mCh'],
-                                      out_channel='pre_cell_labels')
+segmented_GFP = wf.improved_watershed(binarized_GFP,
+                                                           in_channel=['cell_tags', 'projected_mCh'],
+                                                           out_channel='pre_cell_labels')
 
-qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
-                                   in_channel='projected_GFP',
-                                   out_channel='qualifying_GFP')
+qualifying_GFP = wf.qualifying_gfp(segmented_GFP,
+                                                        in_channel='projected_GFP',
+                                                        out_channel='qualifying_GFP')
 
-average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
-                                   in_channel=['pre_cell_labels', 'projected_GFP', 'qualifying_GFP'],
-                                   out_channel=['average_GFP', 'average_GFP_pad'])
+average_GFP = wf.average_qualifying_value_per_region(qualifying_GFP,
+                                                                          in_channel=['pre_cell_labels', 'projected_GFP', 'qualifying_GFP'],
+                                                                          out_channel=['average_GFP', 'average_GFP_pad'])
 
-GFP_upper_outlier_cells = cf.detect_upper_outliers(average_GFP,
-                                                   in_channel='average_GFP',
-                                                   out_channel=['non_outliers', 'pred_gpf_av',
+GFP_upper_outlier_cells = wf.detect_upper_outliers(average_GFP,
+                                                                        in_channel='average_GFP',
+                                                                        out_channel=['non_outliers', 'pred_gpf_av',
                                                                 'gfp_std'])
 
-GFP_outliers = cf.paint_mask(GFP_upper_outlier_cells,
-                             in_channel=['pre_cell_labels', 'non_outliers'],
-                             out_channel='kept_cells')
-GFP_filtered = cf.mask_filter_2d(GFP_outliers,
-                                 in_channel=['pre_cell_labels', 'kept_cells'],
-                                 out_channel='cell_labels')
+GFP_outliers = wf.paint_mask(GFP_upper_outlier_cells,
+                                                  in_channel=['pre_cell_labels', 'non_outliers'],
+                                                  out_channel='kept_cells')
+GFP_filtered = wf.mask_filter_2d(GFP_outliers,
+                                                      in_channel=['pre_cell_labels', 'kept_cells'],
+                                                      out_channel='cell_labels')
 
 
 per_cell_split = cf.splitter(GFP_filtered, 'per_cell',
@@ -73,33 +75,34 @@ per_cell_split = cf.splitter(GFP_filtered, 'per_cell',
                                       'projected_mCh', 'projected_GFP'],
                              mask='cell_labels')
 
-per_cell_mito = cf.for_each(per_cell_split, cf.binarize_2d, 'per_cell', cutoff_type='otsu',
+per_cell_mito = cf.for_each(per_cell_split, wf.binarize_2d, 'per_cell', cutoff_type='otsu',
                             in_channel='projected_mCh',
                             out_channel='mito_binary')
 
-segmented_mito = cf.for_each(per_cell_mito, cf.label_and_correct, 'per_cell',
+segmented_mito = cf.for_each(per_cell_mito, wf.label_and_correct, 'per_cell',
                              in_channel=['mito_binary', 'projected_mCh'],
                              out_channel='mito_labels')
 
-mito_3d_from_2d_mask = cf.for_each(segmented_mito, cf._3d_mask_from_2d_mask, 'per_cell',
-                                    in_channel=['mCherry', 'mito_labels'],
-                                    out_channel='mito_labels_3d')
+mito_3d_from_2d_mask = cf.for_each(segmented_mito, wf.otsu_tresholding, 'per_cell',
+                                   in_channel=['mCherry', 'mito_labels'],
+                                   out_channel='mito_labels_3d')
 
 # problem - mqvi does not seem to be working on an individual basis
 
-GFP_AEQVI = cf.for_each(mito_3d_from_2d_mask, cf.volume_aqvi, 'per_cell',
+GFP_AEQVI = cf.for_each(mito_3d_from_2d_mask, wf.volume_aqvi, 'per_cell',
                         in_channel=['GFP', 'mito_labels_3d'],
                         out_channel='gfp_mqvi')
 
-MCH_AEQVI = cf.for_each(GFP_AEQVI, cf.volume_aqvi, 'per_cell',
+MCH_AEQVI = cf.for_each(GFP_AEQVI, wf.volume_aqvi, 'per_cell',
                         in_channel=['mCherry', 'mito_labels_3d'],
                         out_channel='mch_mqvi')
 
-skeletonized = cf.for_each(MCH_AEQVI, cf.agreeing_skeletons, 'per_cell',
+skeletonized = cf.for_each(MCH_AEQVI, wf.agreeing_skeletons, 'per_cell',
                            in_channel=['projected_mCh', 'mito_binary'],
                            out_channel='mCh_skeleton')
 
-classified = cf.for_each(skeletonized, cf.classify_fragmentation_for_mitochondria, 'per_cell',
+classified = cf.for_each(skeletonized,
+                         wf.classify_fragmentation_for_mitochondria, 'per_cell',
                          in_channel=['mito_labels', 'mCh_skeleton'],
                          out_channel=['final_classification', 'classification_mask',
                                       'radius_mask', 'support_mask'])

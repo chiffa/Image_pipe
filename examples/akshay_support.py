@@ -5,6 +5,8 @@ import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 
+import imagepipe.raw_functions
+import imagepipe.tools.helpers
 import imagepipe.wrapped_functions
 from imagepipe import core_functions as cf
 from imagepipe.core_functions import generator_wrapper
@@ -90,7 +92,7 @@ def Akshay_traverse(main_root):
         if files:
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
-                    prefix = imagepipe.wrapped_functions.split_and_trim(current_location, main_root)
+                    prefix = imagepipe.raw_functions.split_and_trim(current_location, main_root)
 
                     img_codename = [img.split('.')[0]]
                     name_pattern = ' - '.join(prefix + img_codename)
@@ -98,7 +100,7 @@ def Akshay_traverse(main_root):
                     matched_images.append((name_pattern, group_by, os.path.join(current_location, img)))
 
     for name_pattern, group_by, image_location in matched_images:
-        stack = imagepipe.wrapped_functions.tiff_stack_2_np_arr(image_location)
+        stack = imagepipe.tools.helpers.tiff_stack_2_np_arr(image_location)
         stack = np.rollaxis(stack[0, :, :, :], 2)  # on the data where channels have not been split into z stacks
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]

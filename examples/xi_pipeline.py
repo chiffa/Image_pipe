@@ -2,7 +2,9 @@ from csv import writer as csv_writer
 from time import time, strftime
 
 import examples.xi_support
+import imagepipe.raw_functions
 import imagepipe.traversals as uf
+import imagepipe.wrapped_functions as wf
 from imagepipe import core_functions as cf
 
 translator = {'C2': 0,
@@ -17,50 +19,50 @@ source = examples.xi_support.xi_traverse('L:\\Users\\xi\\Quantification of coloc
 
 named_source = uf.name_channels(source, ['GFP', 'mCherry'])
 
-stabilized_GFP = cf.gamma_stabilize(named_source, in_channel='GFP', min='min', alpha_clean=.5)
+stabilized_GFP = wf.gamma_stabilize(named_source, in_channel='GFP', floor_method='min', alpha_clean=.5)
 
-smoothed_GFP = cf.smooth(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
+smoothed_GFP = wf.smooth(stabilized_GFP, in_channel='GFP', smoothing_px=.5)
 
-stabilized_mCh = cf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', min='min', alpha_clean=.5)
+stabilized_mCh = wf.gamma_stabilize(smoothed_GFP, in_channel='mCherry', floor_method='min', alpha_clean=.5)
 
-smoothed_mCh = cf.smooth(stabilized_mCh, in_channel='mCherry', smoothing_px=.5)
+smoothed_mCh = wf.smooth(stabilized_mCh, in_channel='mCherry', smoothing_px=.5)
 
-med_norm_GFP = cf.locally_normalize(smoothed_mCh,
-                                    in_channel='GFP',
-                                    )
+med_norm_GFP = wf.locally_normalize(smoothed_mCh,
+                                                         in_channel='GFP',
+                                                         )
 
-med_norm_mCh = cf.locally_normalize(med_norm_GFP,
-                                    in_channel='mCherry',
-                                    )
+med_norm_mCh = wf.locally_normalize(med_norm_GFP,
+                                                         in_channel='mCherry',
+                                                         )
 
-projected_GFP = cf.max_projection(med_norm_mCh,
-                                  in_channel='GFP',
-                                  out_channel='projected_GFP')
+projected_GFP = wf.max_projection(med_norm_mCh,
+                                                       in_channel='GFP',
+                                                       out_channel='projected_GFP')
 
-projected_mCh = cf.max_projection(projected_GFP,
-                                  in_channel='mCherry',
-                                  out_channel='projected_mCh')
+projected_mCh = wf.max_projection(projected_GFP,
+                                                       in_channel='mCherry',
+                                                       out_channel='projected_mCh')
 
 
-binarized_GFP = cf.robust_binarize(projected_mCh,
-                                   in_channel='projected_GFP',
-                                   out_channel='cell_tags',
-                                   heterogeity_size=5,
-                                   feature_size=70,
-                                   )
+binarized_GFP = wf.robust_binarize(projected_mCh,
+                                                        in_channel='projected_GFP',
+                                                        out_channel='cell_tags',
+                                                        heterogeity_size=5,
+                                                        feature_size=70,
+                                                        )
 
-segmented_GFP = cf.improved_watershed(binarized_GFP,
-                                      in_channel=['cell_tags', 'projected_mCh'],
-                                      out_channel='pre_cell_labels',
-                                      expected_separation=100)
+segmented_GFP = wf.improved_watershed(binarized_GFP,
+                                                           in_channel=['cell_tags', 'projected_mCh'],
+                                                           out_channel='pre_cell_labels',
+                                                           expected_separation=100)
 
-qualifying_GFP = cf.qualifying_gfp(segmented_GFP,
-                                   in_channel='projected_GFP',
-                                   out_channel='qualifying_GFP')
+qualifying_GFP = wf.qualifying_gfp(segmented_GFP,
+                                                        in_channel='projected_GFP',
+                                                        out_channel='qualifying_GFP')
 
-average_GFP = cf.aq_gfp_per_region(qualifying_GFP,
-                                   in_channel=['pre_cell_labels', 'projected_GFP', 'qualifying_GFP'],
-                                   out_channel=['average_GFP', 'average_GFP_pad'])
+average_GFP = wf.average_qualifying_value_per_region(qualifying_GFP,
+                                                                          in_channel=['pre_cell_labels', 'projected_GFP', 'qualifying_GFP'],
+                                                                          out_channel=['average_GFP', 'average_GFP_pad'])
 
 pre_render = examples.xi_support.xi_pre_render(average_GFP,
                                                in_channel=['name pattern',
