@@ -71,21 +71,19 @@ pipeline = wf.label_based_aq(pipeline,
                                                    out_channel=['av_en_p53', 'av_en_p53_pad'])
 
 
-pipeline = examples.akshay_support.akshay_render(pipeline,
-                                                       in_channel=['name pattern', 'DAPI', 'p53', 'p21',
-                                               'nuclei', 'vor_segment',
-                                               'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad',
-                                               'extra_nuclear_p21', 'nuc_p21_pad', 'av_en_p21_pad'],
-                                                       out_channel='_',
-                                                       save=False)
+pipeline = examples.akshay_support.akshay_partial_render(pipeline,
+                                                in_channel=['name pattern', 'DAPI', 'p53',
+                                                'nuclei', 'vor_segment',
+                                                'extra_nuclear_p53', 'av_p53_pad', 'av_en_p53_pad'],
+                                                out_channel='_',
+                                                save=False)
 
 # after checking this pipeline, replace False with True
 
-pipeline = examples.akshay_support.akshay_summarize(pipeline,
-                                                   in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53',
-                                           'nuc_p21', 'av_en_p21'],
-                                                   out_channel='_',
-                                                   output='akshay_analysis_results.csv')
+pipeline = examples.akshay_support.akshay_partial_summarize(pipeline,
+                                            in_channel=['name pattern', 'group id', 'av_p53', 'av_en_p53'],
+                                            out_channel='_',
+                                            output='akshay_analysis_results.csv')
 
 with open('akshay_analysis_results.csv', 'wb') as output_file:
         writer = csv_writer(output_file)

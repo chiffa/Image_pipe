@@ -78,12 +78,67 @@ def akshay_render(name_pattern, DAPI, p53, p21,
         plt.close()
 
 
+@generator_wrapper(in_dims=(None, 2, 2, 2, 2, 2, 2, 2), out_dims=(None,))
+def akshay_partial_render(name_pattern, DAPI, p53,
+                  nuclei, vor_segment,
+                  extra_nuclear_p53, nuclear_p53_pad, extranuclear_p53_pad,
+                  save=False, directory_to_save_to='verification'):
+
+    plt.figure(figsize=(26.0, 15.0))
+    plt.suptitle(name_pattern)
+
+    main_ax = plt.subplot(221)
+    plt.title('DAPI')
+    plt.imshow(DAPI, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+
+    plt.subplot(222, sharex=main_ax, sharey=main_ax)
+    plt.title('p53')
+    plt.imshow(p53, interpolation='nearest')
+    plt.contour(nuclei, [0.5], colors='k')
+    plt.contour(extra_nuclear_p53, [0.5], colors='w')
+
+    ax = plt.subplot(223, sharex=main_ax, sharey=main_ax)
+    plt.title('nuclei & Voronoi segmentation')
+    plt.imshow(vor_segment, interpolation='nearest', cmap='spectral', vmin=0)
+    plt.contour(nuclei, [0.5], colors='k')
+    unique = np.unique(vor_segment)
+    for i in unique:
+        mask = nuclei == i
+        x, y = scipy.ndimage.measurements.center_of_mass(mask)
+        ax.text(y-8, x+8, '%s' % i, fontsize=10)
+
+    plt.subplot(224, sharex=main_ax, sharey=main_ax)
+    plt.title('p53 nucleus/cell intensity')
+    p_53_summmary = np.zeros_like(nuclear_p53_pad)
+    p_53_summmary[extranuclear_p53_pad > 0] = extranuclear_p53_pad[extranuclear_p53_pad > 0]
+    p_53_summmary[nuclear_p53_pad > 0] = nuclear_p53_pad[nuclear_p53_pad > 0]
+    im = plt.imshow(p_53_summmary, interpolation='nearest', cmap='hot')
+    plt.colorbar(im)
+    plt.contour(nuclei, [0.5], colors='b')
+    plt.contour(extra_nuclear_p53, [0.5], colors='g')
+
+    if not save:
+        plt.show()
+
+    else:
+        name_puck = directory_to_save_to+'/'+'akshay-'+name_pattern+'.png'
+        plt.savefig(name_puck)
+        plt.close()
+
 @generator_wrapper(in_dims=(None, None, 1, 1, 1, 1), out_dims=(None,))
 def akshay_summarize(name_pattern, group_by, av_nuc_p53, av_en_p53, av_nuc_p21, av_en_p21, output):
     with open(output, 'ab') as output_file:
         writer = csv_writer(output_file)
         for i, nuc_pac in enumerate(zip(av_nuc_p53, av_en_p53, av_nuc_p21, av_en_p21)):
             writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1], nuc_pac[2], nuc_pac[3]])
+
+@generator_wrapper(in_dims=(None, None, 1, 1), out_dims=(None,))
+def akshay_partial_summarize(name_pattern, group_by, av_nuc_p53, av_en_p53, output):
+    with open(output, 'ab') as output_file:
+        writer = csv_writer(output_file)
+        for i, nuc_pac in enumerate(zip(av_nuc_p53, av_en_p53)):
+            writer.writerow([name_pattern, group_by, i, nuc_pac[0], nuc_pac[1]])
 
 
 def Akshay_traverse(main_root):

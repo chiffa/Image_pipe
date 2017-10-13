@@ -79,7 +79,7 @@ def color_based_traversal(main_root, coding_separator='.', group_anchor=1):
         channels = np.split(stack, stack.shape[0])
         channels = [chan[0, :, :] for chan in channels]
         # print "channel debug"
-        for channel in channels:
+        # for channel in channels:
             # print '>', channel.shape, channel.dtype
         yield name_pattern, group_by, channels
 
