@@ -21,8 +21,8 @@ The documentation is available `here <https://image-pipe.readthedocs.io/en/lates
    :target: https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt
 .. |Build Status| image:: https://travis-ci.org/chiffa/Image_pipe.svg?branch=master
    :target: https://travis-ci.org/chiffa/Image_pipe
-.. |Branch status| image:: https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow.svg
-   :target: https://github.com/chiffa/Image_pipe/blob/master/README.rst
+.. |Branch status| image:: https://img.shields.io/badge/branch_status-0.2.0_release_candidate-yellow.svg
+   :target: https://github.com/chiffa/Image_pipe/blob/master/README.md
 .. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg
    :target: http://clonedigger.sourceforge.net/
 .. |Code Health| image::  https://landscape.io/github/chiffa/Image_pipe/master/landscape.svg?style=flat

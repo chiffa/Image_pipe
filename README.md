@@ -1,7 +1,7 @@
 [![License
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
 [![Branch
-status](https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.rst)
+status](https://img.shields.io/badge/branch_status-0.2.0_release_candidate-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.md)
 [![Build
 Status](https://travis-ci.org/chiffa/Image_pipe.svg?branch=master)](https://travis-ci.org/chiffa/Image_pipe)
 [![Code
