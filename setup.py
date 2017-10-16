@@ -22,12 +22,12 @@ requirements = [
 
 setup(
     name='ImagePipe',
-    version='0.0.1',
-    description='Image analysis pipelines compiler',
+    version='0.2.0_rc1',
+    description='Biological image analysis pipelines compiler',
     long_description=long_description,
     url='https://github.com/chiffa/Image_pipe',
     author='Andrei Kucharavy',
-    author_email='andrei.chiffa136@gmail.com',
+    author_email='andrei.shield15@gmail.com',
     license='BSD',
     classifiers=[
         'Development Status :: 3 - Alpha',
