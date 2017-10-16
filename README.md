@@ -1,7 +1,7 @@
 [![License
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
 [![Branch
-status](https://img.shields.io/badge/branch_status-0.2.0_release_candidate-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.md)
+status](https://img.shields.io/badge/branch_-0.2.0_rc-yellow.svg)](https://github.com/chiffa/Image_pipe/blob/master/README.md)
 [![Build
 Status](https://travis-ci.org/chiffa/Image_pipe.svg?branch=master)](https://travis-ci.org/chiffa/Image_pipe)
 [![Code
@@ -25,5 +25,16 @@ and abstractions (pipe, tiling, per-segment processing, etc...).
 This project is currently in alpha development, hence poorly documented,
 sparsely tested and prone to rapid changes.
 
-The documentation is available
-[here](https://image-pipe.readthedocs.io/en/latest/).
+Basic installation:
+
+    > pip install imagepipe
+
+or:
+
+    > pip install git+https://github.com/chiffa/Image_pipe.git
+
+The documentation is available [on
+readthedocs](https://image-pipe.readthedocs.io/en/latest/).
+
+Project is housed at [GitHub](https://github.com/chiffa/Image_pipe). For
+any issues please refer to GitHub issue tracker.
