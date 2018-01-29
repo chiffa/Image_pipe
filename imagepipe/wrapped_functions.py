@@ -13,6 +13,8 @@ sum_projection = generator_wrapper(in_dims=(3,), out_dims=(2,))(rf.sum_projectio
 max_projection = generator_wrapper(in_dims=(3,), out_dims=(2,))(rf.max_projection)
 random_walker_binarize = generator_wrapper(in_dims=(2,))(rf.random_walker_binarize)
 robust_binarize = generator_wrapper(in_dims=(2,), out_dims=(2,))(rf.robust_binarize)
+
+
 filter_labels = generator_wrapper(in_dims=(2, 2), out_dims=(2,))(rf.filter_labels)
 voronoi_segment_labels = generator_wrapper(in_dims=(2,))(rf.voronoi_segment_labels)
 exclude_region = generator_wrapper(in_dims=(2, 2), out_dims=(2,))(rf.exclude_region)

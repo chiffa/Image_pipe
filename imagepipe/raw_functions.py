@@ -20,11 +20,12 @@ def split_and_trim(path_prefix, main_root):
     """
     helper function for OS Path trimming routine that accounts for the trailing separator
 
-    :param path_prefix:
-    :param main_root:
-    :return:
+    :param path_prefix: [str]
+    :param main_root: [str]
+    :return:[list]
     """
     trim_length = len(main_root)
+    print os.sep, main_root[-1]
     if main_root[-1] != os.sep:
         trim_length += 1
 

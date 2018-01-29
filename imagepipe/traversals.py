@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 from imagepipe.raw_functions import split_and_trim
 from imagepipe.tools.helpers import tiff_stack_2_np_arr
-
+import sys
 logger = logging.getLogger('Default Debug Logger')
 logger.setLevel(logging.DEBUG)
 
@@ -65,8 +65,12 @@ def color_based_traversal(main_root, coding_separator='.', group_anchor=1):
             for img in files:
                 if ('.TIF' in img or '.tif' in img) and '_thumb_' not in img:
                     prefix = split_and_trim(current_location, main_root)
+                    # print current_location, main_root
+                    # print prefix
+                    # print "test"
+                    # sys.exit()
                     img_codename = img[:-4].split(coding_separator)
-                    # print img, img_codename
+                    print img, img_codename
                     name_pattern = ' - '.join(prefix + img_codename)
                     # group_by = img_codename[0].split('rpe')[1].split('dapi')[0].strip()
                     group_by = img_codename[group_anchor]

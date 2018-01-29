@@ -31,12 +31,12 @@ def doublewrap(f):
 
 
 @doublewrap
-def generator_wrapper(f, in_dims=(3,), out_dims=None):
+def generator_wrapper(my_function, in_dims=(3,), out_dims=None):
 
     if out_dims is None:
             out_dims = in_dims
 
-    @wraps(f)
+    @wraps(my_function)
     def inner_wrapper(*args, **kwargs):
         """
         converts a function to accepting a generator of named dicts and adds channel selection logic
@@ -44,6 +44,7 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
         iterator = args[0]
         args = args[1:]
+        print my_function.__name__
 
         if 'in_channel' in kwargs:
             #Start in/out channel logic
@@ -62,22 +63,22 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
             else:  # implicit output, bound to in_channel only if a single input is provided
                 if len(in_chan) == 1:
-                    print 'Input %s will be overwritten by function %s' % (in_chan[0], f.__name__)
+                    print 'Input %s will be overwritten by function %s' % (in_chan[0], my_function.__name__)
                     out_chan = in_chan
                 else:
-                    print f.__name__
+                    print my_function.__name__
                     print in_chan, in_dims
                     raise PipeArgError('Please provide out_channel argument')
 
             if len(in_chan) != len(in_dims):
-                print f.__name__
+                print my_function.__name__
                 print in_chan, in_dims
                 print len(in_chan), len(in_dims)
                 raise PipeArgError('%s inbound channels are piped, function allows %s' %
                                    (len(in_chan), len(in_dims)))
 
             if len(out_chan) != len(out_dims):
-                print f.__name__
+                print my_function.__name__
                 print out_chan, out_dims
                 print len(out_chan), len(out_dims)
                 raise PipeArgError('%s outbound channels are piped, function allows %s' %
@@ -86,21 +87,28 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
             for name_space in iterator:
                 # start args prepare
+                print "pullin function %s " % my_function.__name__ 
+                print args, kwargs
                 args_puck = []
 
                 for i, chan in enumerate(in_chan):
                     if in_dims[i] and len(name_space[chan].shape) != in_dims[i]:
-                        print f.__name__
+                        print my_function.__name__
                         print chan, len(name_space[chan].shape), in_dims[i]
                         raise PipeArgError('Mismatched inbound channel dimension for channel. %s is of dim %s, expected %s' %
                                            (chan, len(name_space[chan].shape), in_dims[i]))
                     args_puck.append(name_space[chan])
 
+
                 local_args = tuple(args_puck) + args
                 # end args prepare
-                return_puck = f(*local_args, **kwargs)
+                print "local args ready"
+                print my_function.__name__
+                return_puck = my_function(*local_args, **kwargs)
+                print "return puck ready"
 
                 if return_puck is None and out_chan[0] == '_':
+                    print my_function.__name__, "yields"
                     yield name_space  # unlike return, yield is probably non-blocking....
 
                 else:
@@ -110,21 +118,22 @@ def generator_wrapper(f, in_dims=(3,), out_dims=None):
 
                     for i, chan in enumerate(out_chan):
                         if out_dims[i] and len(return_puck[i].shape) != out_dims[i]:
-                            print f.__name__
+                            print my_function.__name__
                             print chan
                             raise PipeArgError('Mismatched outgoing channel dimension for channel. %s is of dim %s, expected %s' %
                                                (chan, len(return_puck[i].shape), out_dims[i]))
                         if chan != '_':
                             name_space[chan] = return_puck[i]
                     # end output prepare
-
+                    print my_function.__name__, "yields"
                     yield name_space
 
         else:
             for name_space in iterator:
 
                 local_args = (name_space,) + args
-                name_space = f(*local_args, **kwargs)
+                name_space = my_function(*local_args, **kwargs)
+                print my_function.__name__, "yields"
                 yield name_space
 
     return inner_wrapper
