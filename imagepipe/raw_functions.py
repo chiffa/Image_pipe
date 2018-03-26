@@ -15,6 +15,7 @@ from skimage.segmentation import random_walker
 
 from imagepipe.tools.helpers import PipeArgError
 
+from collections import defaultdict
 
 def split_and_trim(path_prefix, main_root):
     """
